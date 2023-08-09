@@ -26,16 +26,7 @@ bot.start((ctx) => {
   });
 });
 
-bot.telegram.setWebhook(config.webHookDomain + "/" + config.botToken);
+// bot.telegram.setWebhook(config.webHookDomain + "/" + config.botToken);
 
-bot
-  .launch({
-    webhook: {
-      domain: config.webHookDomain!,
-      hookPath: config.botToken,
-      port: 8443,
-    },
-  })
-  .then(() => console.log("Webhook bot listening on port", 8443));
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
