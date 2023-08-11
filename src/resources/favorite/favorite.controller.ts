@@ -33,10 +33,12 @@ export async function addUserFavorite(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, favID, favName } = req.query;
+  const { chatId, type, favID, favName, favImage } = req.body;
 
-  if (!chatId || !favID || !type) {
-    return res.status(400).json({ message: "chatId, type and favId required" });
+  if (!chatId || !favID || !type || !favName || !favImage) {
+    return res
+      .status(400)
+      .json({ message: "chatId, type, favName, favImage and favId required" });
   }
   try {
     const finder: any = { chatId };
@@ -57,7 +59,7 @@ export async function removeUserFavorite(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, favID } = req.query;
+  const { chatId, type, favID } = req.body;
 
   if (!chatId || !favID || !type) {
     return res.status(400).json({ message: "chatId, type and favId required" });
