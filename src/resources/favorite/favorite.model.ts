@@ -9,7 +9,7 @@ export interface IFavorite {
 }
 
 const FavoriteSchema = new mongoose.Schema({
-  favId: {
+  favID: {
     type: String,
   },
   favName: {

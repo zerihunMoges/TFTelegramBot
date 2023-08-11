@@ -2,6 +2,21 @@ import { Favorite } from "../favorite/favorite.model";
 import { IUser, User } from "./user.model";
 
 export async function createUser(user: IUser) {
+  let newUser;
+  try {
+    const newUser = await User.create(user);
+
+    if (newUser) {
+      await defaultFavorites(newUser.chatId);
+    }
+  } catch (err) {
+    console.error("error occurred ");
+  }
+  console.log("returned");
+  return newUser;
+}
+
+async function defaultFavorites(userId) {
   const topLeagues = [
     {
       id: 39,
@@ -36,27 +51,16 @@ export async function createUser(user: IUser) {
       logo: "https://media-2.api-sports.io/football/leagues/140.png",
     },
   ];
-  let newUser;
-  try {
-    const newUser = await User.create(user);
 
-    if (newUser) {
-      topLeagues.forEach(
-        async (league) =>
-          await Favorite.create({
-            chatId: newUser.chatId,
-            favID: league.id,
-            favName: league.name,
-            favImage: league.logo,
-            type: "league",
-          })
-      );
-
-      console.log("creating");
-    }
-  } catch (err) {
-    console.error("error occurred ");
+  for (const league of topLeagues) {
+    await Favorite.create({
+      chatId: userId,
+      favID: league.id,
+      favName: league.name,
+      favImage: league.logo,
+      type: "league",
+    });
   }
-  console.log("returned");
-  return newUser;
+
+  console.log("finished creating");
 }
