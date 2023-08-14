@@ -7,7 +7,7 @@ import favoriteRouter from "./resources/favorite/favorite.route";
 import userRouter from "./resources/user/user.route";
 
 const app = express();
-
+app.use(express.json());
 app.use(cors({ origin: true }));
 
 app.use("/api/favorites", favoriteRouter);

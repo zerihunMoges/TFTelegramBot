@@ -5,9 +5,7 @@ import { config } from "../config";
 const token = config.botToken;
 const webApp = config.webApp;
 export const bot = new Telegraf(token);
-bot.telegram.setMyCommands([
-  { command: "addchannel", description: "Add a channel" },
-]);
+bot.telegram.setMyCommands([]);
 
 bot.catch((err, ctx) => {
   console.error(`Error while handling update ${ctx.update.update_id}:`, err);

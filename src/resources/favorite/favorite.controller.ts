@@ -35,23 +35,21 @@ export async function addUserFavorite(
 ) {
   const { chatId, type, favID, favName, favImage } = req.body;
 
-  if (!chatId || !favID || !type || !favName || !favImage) {
-    return res
-      .status(400)
-      .json({ message: "chatId, type, favName, favImage and favId required" });
-  }
   try {
-    const finder: any = { chatId };
-
-    if (type) {
-      finder.type = type;
+    if (!chatId || !favID || !type || !favName || !favImage) {
+      return res
+        .status(400)
+        .json({
+          message: "chatId, type, favName, favImage and favId required",
+        });
     }
-
+    console.log({ chatId, type, favID, favName, favImage });
     const favorite = await Favorite.create({ chatId, type, favID, favName });
-    res.status(200);
+    console.log("created", favorite);
+    return res.status(200);
   } catch (err) {
     console.error(err);
-    res.status(500);
+    return res.status(500);
   }
 }
 export async function removeUserFavorite(
