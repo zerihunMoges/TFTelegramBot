@@ -37,19 +37,17 @@ export async function addUserFavorite(
 
   try {
     if (!chatId || !favID || !type || !favName || !favImage) {
-      return res
-        .status(400)
-        .json({
-          message: "chatId, type, favName, favImage and favId required",
-        });
+      return res.status(400).json({
+        message: "chatId, type, favName, favImage and favId required",
+      });
     }
     console.log({ chatId, type, favID, favName, favImage });
     const favorite = await Favorite.create({ chatId, type, favID, favName });
     console.log("created", favorite);
-    return res.status(200);
+    return res.status(200).json(favorite);
   } catch (err) {
     console.error(err);
-    return res.status(500);
+    return res.status(500).json();
   }
 }
 export async function removeUserFavorite(
@@ -66,7 +64,7 @@ export async function removeUserFavorite(
     const finder: any = { chatId, type, favID };
 
     const favorite = await Favorite.findOneAndDelete(finder);
-    res.status(200);
+    res.status(201);
   } catch (err) {
     console.error(err);
     res.status(500);
