@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IUser, User } from "./user.model";
 import { createUser } from "./user.service";
-import { subtle } from "crypto";
+import * as crypto from "crypto";
 import { config } from "../../../config";
 
 export async function registerUser(
@@ -73,37 +73,19 @@ async function veriftyDataIsFromTelegram(data, hash) {
     .map((key) => `${key}=${data[key]}`)
     .sort()
     .join("\n");
-  console.log(botToken, data);
 
-  const secretKey = await subtle.importKey(
-    "raw",
-    encoder.encode("WebAppData"),
-    { name: "HMAC", hash: "SHA-256" },
-    true,
-    ["sign"]
-  );
-  const secret = await subtle.sign("HMAC", secretKey, encoder.encode(botToken));
-  const signatureKey = await subtle.importKey(
-    "raw",
-    secret,
-    { name: "HMAC", hash: "SHA-256" },
-    true,
-    ["sign"]
-  );
-  const signature = await subtle.sign(
-    "HMAC",
-    signatureKey,
-    encoder.encode(checkString)
-  );
+  const secretKey = crypto
+    .createHmac("sha256", botToken)
+    .update("WebAppData")
+    .digest();
+  const signature = crypto
+    .createHmac("sha256", secretKey)
+    .update(checkString)
+    .digest("hex");
 
-  const hex = [...new Uint8Array(signature)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  console.log(hex);
-  console.log(hash);
-  if (hex !== hash) {
-    return false;
+  if (signature === hash) {
+    return true;
   }
 
-  return true;
+  return false;
 }
