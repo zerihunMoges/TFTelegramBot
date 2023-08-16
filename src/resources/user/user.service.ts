@@ -1,8 +1,8 @@
 import { Favorite } from "../favorite/favorite.model";
 import { IUser, User } from "./user.model";
 
-export async function createUser(user: IUser) {
-  let newUser;
+export async function createUser(user: IUser): Promise<IUser> {
+  let newUser: IUser;
   try {
     const newUser = await User.create(user);
 
@@ -10,9 +10,8 @@ export async function createUser(user: IUser) {
       await defaultFavorites(newUser.chatId);
     }
   } catch (err) {
-    console.error("error occurred ");
+    console.error("error occurred ", err);
   }
-  console.log("returned");
   return newUser;
 }
 
@@ -61,6 +60,4 @@ async function defaultFavorites(userId) {
       type: "league",
     });
   }
-
-  console.log("finished creating");
 }

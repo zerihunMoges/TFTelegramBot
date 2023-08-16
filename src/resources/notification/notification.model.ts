@@ -1,17 +1,18 @@
 import mongoose from "mongoose";
 import { config } from "../../../config";
 import encrypt from "mongoose-encryption";
+import { User } from "../user/user.model";
 
 export interface IUserNotification {
-  chatId: string | number;
+  user: mongoose.Types.ObjectId;
   type: string;
   notId: string;
-  botToken: string;
 }
 
 const UserNotificationSchema = new mongoose.Schema({
-  chatId: {
-    type: String || Number,
+  user: {
+    type: mongoose.Types.ObjectId,
+    ref: User,
     required: true,
   },
   type: {
@@ -22,18 +23,6 @@ const UserNotificationSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  botToken: {
-    type: String,
-    required: true,
-  },
-});
-
-const encKey = config.enc;
-const sigKey = config.sig;
-UserNotificationSchema.plugin(encrypt, {
-  encryptionKey: encKey,
-  signingKey: sigKey,
-  encryptedFields: ["botToken"],
 });
 
 export const UserNotification = mongoose.model<IUserNotification>(

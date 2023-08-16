@@ -7,7 +7,7 @@ import {
 
 const notificationRouter = Router();
 
-notificationRouter.post("", subscribe);
-notificationRouter.delete("", unSubscribe);
-notificationRouter.get("", getSubscriptions);
+notificationRouter.post("/subscribe", subscribe);
+notificationRouter.delete("/unsubscribe", unSubscribe);
+notificationRouter.post("", getSubscriptions);
 export default notificationRouter;

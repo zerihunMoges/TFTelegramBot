@@ -70,7 +70,7 @@ export async function getSubscriptions(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, notId } = req.query;
+  const { chatId, club } = req.body;
 
   if (!chatId) {
     return res.status(400).json({ message: "chatId required" });
@@ -83,10 +83,13 @@ export async function getSubscriptions(
         .status(400)
         .json({ message: `user with chatId ${chatId} doesn't exist` });
     }
-    const finder: any = { chatId };
-    if (type) finder.type = type;
-    if (notId) finder.notId = notId;
-    const notifications = await UserNotification.find(finder);
+    const finder: any = { user: user.id, type: "club", notId: club };
+
+    const notifications = await UserNotification.find(finder).populate({
+      path: "user",
+      model: User,
+      select: "-__v",
+    });
 
     res.status(200).json(notifications);
   } catch (err) {
