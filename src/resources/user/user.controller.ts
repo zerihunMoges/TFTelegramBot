@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IUser, User } from "./user.model";
 import { createUser } from "./user.service";
-const { subtle } = require("crypto").webcrypto;
+import { subtle } from "crypto";
 import { config } from "../../../config";
 
 export async function registerUser(
