@@ -83,6 +83,8 @@ async function veriftyDataIsFromTelegram(data, hash) {
     .update(checkString)
     .digest("hex");
 
+  console.log(signature, hash);
+
   if (signature === hash) {
     return true;
   }
