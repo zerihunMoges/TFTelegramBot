@@ -67,15 +67,21 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
 function veriftyDataIsFromTelegram(data, hash) {
   const botToken = config.botToken;
+
+  const checkString = Object.keys(Object.fromEntries(new URLSearchParams(data)))
+    .filter((key) => key !== "hash")
+    .map((key) => `${key}=${data[key]}`)
+    .sort()
+    .join("\n");
   console.log(botToken, data);
-  const data_check_string = data;
+
   const secret_key = crypto
     .createHmac("sha256", botToken)
     .update("WebAppData")
     .digest("hex");
   const computedHash = crypto
     .createHmac("sha256", secret_key)
-    .update(data_check_string)
+    .update(checkString)
     .digest("hex");
 
   console.log(computedHash);
