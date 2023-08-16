@@ -7,4 +7,6 @@ export const config = {
   botToken: process.env.BOTTOKEN || "",
   port: parseInt(process.env.PORT || "8000"),
   webHookDomain: process.env.BOTWEBHOOK || "",
+  enc: process.env.ENC,
+  sig: process.env.SIG,
 };

@@ -4,7 +4,6 @@
     "description": "",
     "author": "zerihunmoges",
     "license": "ISC",
-
     "scripts": {
         "start": "node dist/src/app.js",
         "dev": "nodemon src/app.ts",
@@ -15,6 +14,7 @@
         "dotenv": "^16.1.4",
         "express": "^4.18.2",
         "mongoose": "^6.5.1",
+        "mongoose-encryption": "^2.1.2",
         "telegraf": "github:telegraf/telegraf"
     },
     "devDependencies": {

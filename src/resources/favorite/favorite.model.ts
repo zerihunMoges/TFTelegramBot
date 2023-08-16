@@ -3,9 +3,7 @@ import mongoose, { Schema } from "mongoose";
 export interface IFavorite {
   chatId: string;
   type: string;
-  favID: string;
-  favName: string;
-  favImage?: string;
+  fav: any;
 }
 
 const FavoriteSchema = new mongoose.Schema({
@@ -24,7 +22,7 @@ const FavoriteSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["league", "club", "match"],
+    enum: ["league", "club"],
     required: true,
   },
 });

@@ -41,15 +41,21 @@ export async function addUserFavorite(
         message: "chatId, type, favName, favImage and favId required",
       });
     }
-    console.log({ chatId, type, favID, favName, favImage });
-    const favorite = await Favorite.create({
-      chatId,
-      type,
-      favID,
-      favName,
-      favImage,
-    });
-    console.log("created", favorite);
+
+    const favorite = await Favorite.findOneAndUpdate(
+      { chatId, type, favID },
+      {
+        chatId,
+        type,
+        favID,
+        favName,
+        favImage,
+      },
+      {
+        upsert: true,
+      }
+    );
+
     return res.status(200).json(favorite);
   } catch (err) {
     console.error(err);
