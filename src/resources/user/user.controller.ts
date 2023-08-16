@@ -38,17 +38,16 @@ export async function registerUser(
 export async function login(req: Request, res: Response, next: NextFunction) {
   const { firstName, chatId, username, hash, data } = req.body;
 
-  if (!veriftyDataIsFromTelegram(data, hash)) {
-    console.log("not verified");
-    return res
-      .status(400)
-      .json({ message: "telegram data verification failed" });
-  }
   if (!chatId) {
     return res.status(400).json({ message: "chatId required" });
   }
-  console.log("passed verification");
   try {
+    if (!veriftyDataIsFromTelegram(data, hash)) {
+      console.log("not verified");
+      return res
+        .status(400)
+        .json({ message: "telegram data verification failed" });
+    }
     let user: IUser;
     user = await User.findOne({ chatId: chatId });
     if (!user) {
@@ -70,28 +69,16 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 function veriftyDataIsFromTelegram(data, hash) {
   const botToken = config.botToken;
 
-  // 1. Parsing the data.
-  const parsedData = new URLSearchParams(data);
-
-  // 2. Building the verification string.
-  const dataCheckString = Array.from(parsedData.keys())
-    .sort()
-    .map((key) => `${key}=${parsedData.get(key)}`)
-    .join("\n");
-
-  // 3. Calculating the secret key.
-  const secretKey = crypto
-    .createHmac("sha256", botToken)
+  const data_check_string = data;
+  const secret_key = crypto
+    .createHmac("sha256", "<bot_token>")
     .update("WebAppData")
-    .digest();
-
-  // 4. Computing HMAC for the verification string.
+    .digest("hex");
   const computedHash = crypto
-    .createHmac("sha256", secretKey)
-    .update(dataCheckString)
+    .createHmac("sha256", secret_key)
+    .update(data_check_string)
     .digest("hex");
 
-  // 5. Comparing the computed HMAC with hash.
   if (computedHash !== hash) {
     throw new Error("verification failed");
   }
