@@ -74,6 +74,7 @@ function veriftyDataIsFromTelegram(data, hash) {
     .sort()
     .join("\n");
 
+  console.log(checkString);
   const secretKey = crypto
     .createHmac("sha256", botToken)
     .update("WebAppData")
