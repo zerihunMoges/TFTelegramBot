@@ -43,11 +43,11 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   }
   try {
     if (!veriftyDataIsFromTelegram(data, hash)) {
-      console.log("not verified");
       return res
         .status(400)
         .json({ message: "telegram data verification failed" });
     }
+    console.log("waht not");
     let user: IUser;
     user = await User.findOne({ chatId: chatId });
     if (!user) {
@@ -65,7 +65,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-async function veriftyDataIsFromTelegram(data, hash) {
+function veriftyDataIsFromTelegram(data, hash) {
   const botToken = config.botToken;
   const encoder = new TextEncoder();
   const checkString = Object.keys(Object.fromEntries(new URLSearchParams(data)))
