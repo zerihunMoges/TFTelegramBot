@@ -64,3 +64,34 @@ export async function unSubscribe(
 
   res.status(200);
 }
+
+export async function getSubscriptions(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { chatId, type, notId } = req.query;
+
+  if (!chatId) {
+    return res.status(400).json({ message: "chatId required" });
+  }
+
+  try {
+    const user = await User.findOne({ chatId });
+    if (!user) {
+      return res
+        .status(400)
+        .json({ message: `user with chatId ${chatId} doesn't exist` });
+    }
+    const finder: any = { chatId };
+    if (type) finder.type = type;
+    if (notId) finder.notId = notId;
+    const notifications = await UserNotification.find(finder);
+
+    res.status(200).json(notifications);
+  } catch (err) {
+    return res.status(500);
+  }
+
+  res.status(200);
+}
