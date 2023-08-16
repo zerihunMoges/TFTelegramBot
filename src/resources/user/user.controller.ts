@@ -67,7 +67,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
 function veriftyDataIsFromTelegram(data, hash) {
   const botToken = config.botToken;
-
+  console.log(botToken, data);
   const data_check_string = data;
   const secret_key = crypto
     .createHmac("sha256", botToken)
@@ -78,8 +78,10 @@ function veriftyDataIsFromTelegram(data, hash) {
     .update(data_check_string)
     .digest("hex");
 
+  console.log(computedHash);
+  console.log(hash);
   if (computedHash !== hash) {
-    throw new Error("verification failed");
+    return false;
   }
 
   return true;
