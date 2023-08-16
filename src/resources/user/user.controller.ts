@@ -39,6 +39,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   const { firstName, chatId, username, hash, data } = req.body;
 
   if (!veriftyDataIsFromTelegram(data, hash)) {
+    console.log("not verified");
     return res
       .status(400)
       .json({ message: "telegram data verification failed" });
@@ -46,7 +47,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   if (!chatId) {
     return res.status(400).json({ message: "chatId required" });
   }
-
+  console.log("passed verification");
   try {
     let user: IUser;
     user = await User.findOne({ chatId: chatId });
@@ -54,13 +55,14 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       user = await createUser({ firstName, chatId, username });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       firstName: user.firstName,
       username: user.username,
       chatId: user.chatId,
       isBotConnected: user.isBotConnected,
     });
   } catch (err) {
+    console.log(err);
     return res.status(500);
   }
 }
