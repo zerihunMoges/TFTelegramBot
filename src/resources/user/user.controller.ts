@@ -61,8 +61,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       isBotConnected: user.isBotConnected,
     });
   } catch (err) {
-    console.log(err);
-    return res.status(500);
+    return res.status(500).json({ message: "something went wrong" });
   }
 }
 
@@ -71,7 +70,7 @@ function veriftyDataIsFromTelegram(data, hash) {
 
   const data_check_string = data;
   const secret_key = crypto
-    .createHmac("sha256", "<bot_token>")
+    .createHmac("sha256", botToken)
     .update("WebAppData")
     .digest("hex");
   const computedHash = crypto
