@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IUser, User } from "./user.model";
 import { createUser } from "./user.service";
-import * as crypto from "crypto";
+const { subtle } = require("crypto").webcrypto;
 import { config } from "../../../config";
 
 export async function registerUser(
@@ -65,9 +65,9 @@ export async function login(req: Request, res: Response, next: NextFunction) {
   }
 }
 
-function veriftyDataIsFromTelegram(data, hash) {
+async function veriftyDataIsFromTelegram(data, hash) {
   const botToken = config.botToken;
-
+  const encoder = new TextEncoder();
   const checkString = Object.keys(Object.fromEntries(new URLSearchParams(data)))
     .filter((key) => key !== "hash")
     .map((key) => `${key}=${data[key]}`)
@@ -75,18 +75,33 @@ function veriftyDataIsFromTelegram(data, hash) {
     .join("\n");
   console.log(botToken, data);
 
-  const secret_key = crypto
-    .createHmac("sha256", botToken)
-    .update("WebAppData")
-    .digest("hex");
-  const computedHash = crypto
-    .createHmac("sha256", secret_key)
-    .update(checkString)
-    .digest("hex");
+  const secretKey = await subtle.importKey(
+    "raw",
+    encoder.encode("WebAppData"),
+    { name: "HMAC", hash: "SHA-256" },
+    true,
+    ["sign"]
+  );
+  const secret = await subtle.sign("HMAC", secretKey, encoder.encode(botToken));
+  const signatureKey = await subtle.importKey(
+    "raw",
+    secret,
+    { name: "HMAC", hash: "SHA-256" },
+    true,
+    ["sign"]
+  );
+  const signature = await subtle.sign(
+    "HMAC",
+    signatureKey,
+    encoder.encode(checkString)
+  );
 
-  console.log(computedHash);
+  const hex = [...new Uint8Array(signature)]
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  console.log(hex);
   console.log(hash);
-  if (computedHash !== hash) {
+  if (hex !== hash) {
     return false;
   }
 
