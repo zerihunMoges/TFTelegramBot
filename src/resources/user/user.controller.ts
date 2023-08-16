@@ -68,7 +68,8 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 function veriftyDataIsFromTelegram(data, hash) {
   const botToken = config.botToken;
   const encoder = new TextEncoder();
-  const checkString = Object.keys(Object.fromEntries(new URLSearchParams(data)))
+  data = Object.fromEntries(new URLSearchParams(data));
+  const checkString = Object.keys(data)
     .filter((key) => key !== "hash")
     .map((key) => `${key}=${data[key]}`)
     .sort()
