@@ -10,27 +10,30 @@ export interface IUser {
   botToken?: string;
 }
 
-const UserSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
+const UserSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+    },
+    chatId: {
+      type: String || Number,
+      unique: true,
+      required: true,
+    },
+    username: {
+      type: String,
+    },
+    isBotConnected: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
+    botToken: {
+      type: String,
+    },
   },
-  chatId: {
-    type: String || Number,
-    unique: true,
-    required: true,
-  },
-  username: {
-    type: String,
-  },
-  isBotConnected: {
-    type: Boolean,
-    default: false,
-    required: true,
-  },
-  botToken: {
-    type: String,
-  },
-});
+  { timestamps: true }
+);
 
 const encKey = config.enc;
 const sigKey = config.sig;

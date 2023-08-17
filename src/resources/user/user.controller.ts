@@ -49,7 +49,10 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     }
     console.log("waht not");
     let user: IUser;
-    user = await User.findOne({ chatId: chatId });
+    user = await User.findOneAndUpdate(
+      { chatId: chatId },
+      { firstName, chatId, username }
+    );
     if (!user) {
       user = await createUser({ firstName, chatId, username });
     }

@@ -59,5 +59,7 @@ async function defaultFavorites(userId) {
       favImage: league.logo,
       type: "league",
     });
+    console.log("creating arra");
   }
+  console.log("finished");
 }
