@@ -53,6 +53,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     if (!user) {
       user = await createUser({ firstName, chatId, username });
     }
+    console.log(user);
 
     return res.status(200).json({
       firstName: user.firstName,
@@ -61,6 +62,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       isBotConnected: user.isBotConnected,
     });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ message: "something went wrong" });
   }
 }
@@ -86,6 +88,4 @@ function veriftyDataIsFromTelegram(data, hash) {
     .update(checkString)
     .digest("hex");
   return calculatedHash === hash;
-
-  return false;
 }
