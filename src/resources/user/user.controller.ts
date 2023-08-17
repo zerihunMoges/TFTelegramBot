@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { IUser, User } from "./user.model";
 import { createUser } from "./user.service";
-import * as CryptoJS from "crypto-js";
+import * as crypto from "crypto";
 import { config } from "../../../config";
 
 export async function registerUser(
@@ -77,17 +77,15 @@ function veriftyDataIsFromTelegram(data, hash) {
 
   console.log(checkString);
 
-  const secret_key: string = CryptoJS.HmacSHA256(
-    botToken,
-    "WebAppData"
-  ).toString(CryptoJS.enc.Hex);
-
-  if (
-    CryptoJS.HmacSHA256(checkString, secret_key).toString(CryptoJS.enc.Hex) ===
-    hash
-  ) {
-    return true;
-  }
+  const secretKey = crypto
+    .createHmac("sha256", "WebAppData")
+    .update(botToken)
+    .digest();
+  const calculatedHash = crypto
+    .createHmac("sha256", secretKey)
+    .update(checkString)
+    .digest("hex");
+  return calculatedHash === hash;
 
   return false;
 }
