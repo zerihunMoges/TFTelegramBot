@@ -2,17 +2,17 @@ import { Favorite } from "../favorite/favorite.model";
 import { IUser, User } from "./user.model";
 
 export async function createUser(user: IUser): Promise<IUser> {
-  let newUser: IUser;
   try {
     const newUser = await User.create(user);
 
     if (newUser) {
       await defaultFavorites(newUser.chatId);
     }
+
+    return newUser;
   } catch (err) {
     console.error("error occurred ", err);
   }
-  return newUser;
 }
 
 async function defaultFavorites(userId) {

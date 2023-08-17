@@ -15,14 +15,12 @@ export async function getUserFavorites(
   }
   try {
     const user = await User.findOne({ chatId: chatId });
-    console.log(user);
     if (!user) {
-      console.log("create");
-      await createUser({ chatId: chatId.toString() });
+      return res.status(400).json({ message: "user not found" });
     }
 
     const favorites = await Favorite.find({ chatId, type });
-    res.status(200).json({ response: favorites });
+    res.status(200).json(favorites);
   } catch (err) {
     console.error(err);
     res.status(500);
@@ -40,6 +38,10 @@ export async function addUserFavorite(
       return res.status(400).json({
         message: "chatId, type, favName, favImage and favId required",
       });
+    }
+
+    if (!User.findOne({ chatId })) {
+      return res.status(400).json({ message: "user not found" });
     }
 
     const favorite = await Favorite.findOneAndUpdate(
