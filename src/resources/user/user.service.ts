@@ -49,6 +49,12 @@ async function defaultFavorites(userId) {
       type: "League",
       logo: "https://media-2.api-sports.io/football/leagues/140.png",
     },
+    {
+      id: 61,
+      logo: "https://media-3.api-sports.io/football/leagues/61.png",
+      name: "Ligue 1",
+      type: "League",
+    },
   ];
 
   for (const league of topLeagues) {

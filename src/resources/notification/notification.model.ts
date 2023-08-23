@@ -2,21 +2,28 @@ import mongoose from "mongoose";
 import { config } from "../../../config";
 import encrypt from "mongoose-encryption";
 import { User } from "../user/user.model";
+import { Channel } from "../channel/channel.model";
 
-export interface IUserNotification {
+export interface INotification {
   user: mongoose.Types.ObjectId;
   type: string;
   notId: string;
 }
 
-const UserNotificationSchema = new mongoose.Schema({
+const NotificationSchema = new mongoose.Schema({
   user: {
     type: mongoose.Types.ObjectId,
     ref: User,
     required: true,
   },
+  channel: {
+    type: mongoose.Types.ObjectId,
+    ref: Channel,
+    required: true,
+  },
   type: {
     type: String,
+    enum: ["club", "league"],
     required: true,
   },
   notId: {
@@ -25,7 +32,7 @@ const UserNotificationSchema = new mongoose.Schema({
   },
 });
 
-export const UserNotification = mongoose.model<IUserNotification>(
-  "UserNotification",
-  UserNotificationSchema
+export const Notification = mongoose.model<INotification>(
+  "Notification",
+  NotificationSchema
 );

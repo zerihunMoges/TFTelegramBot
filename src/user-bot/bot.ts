@@ -1,6 +1,6 @@
 import { Telegraf, Markup, Scenes, Context, session } from "telegraf";
 import { InlineKeyboardMarkup, InlineQueryResult } from "telegraf/types";
-import { config } from "../config";
+import { config } from "../../config";
 
 const token = config.botToken;
 const webApp = config.webApp;

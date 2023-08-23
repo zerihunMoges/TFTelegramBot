@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { User } from "../user/user.model";
-import { UserNotification } from "./notification.model";
+import { Notification } from "./notification.model";
 
 export async function subscribe(
   req: Request,
@@ -20,7 +20,7 @@ export async function subscribe(
         .json({ message: `user with chatId ${chatId} doesn't exist` });
     }
 
-    const notification = await UserNotification.findOneAndUpdate(
+    const notification = await Notification.findOneAndUpdate(
       { chatId, type, notId },
       { chatId, type, notId, botToken: user.botToken }
     );
@@ -51,7 +51,7 @@ export async function unSubscribe(
         .json({ message: `user with chatId ${chatId} doesn't exist` });
     }
 
-    const notification = await UserNotification.findOneAndDelete({
+    const notification = await Notification.findOneAndDelete({
       chatId,
       type,
       notId,
@@ -65,7 +65,7 @@ export async function unSubscribe(
   res.status(200);
 }
 
-export async function getSubscriptions(
+export async function getUserSubscriptions(
   req: Request,
   res: Response,
   next: NextFunction
@@ -85,7 +85,7 @@ export async function getSubscriptions(
     }
     const finder: any = { user: user.id, type: "club", notId: club };
 
-    const notifications = await UserNotification.find(finder).populate({
+    const notifications = await Notification.find(finder).populate({
       path: "user",
       model: User,
       select: "-__v",
