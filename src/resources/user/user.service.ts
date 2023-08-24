@@ -40,13 +40,13 @@ async function defaultFavorites(userId, session) {
       type: "League",
       logo: "https://media-3.api-sports.io/football/leagues/39.png",
     },
-    {
-      id: 2,
-      logo: "https://media-1.api-sports.io/football/leagues/2.png",
-      name: "UEFA Champions League",
-      type: "Cup",
-    },
 
+    {
+      id: 140,
+      name: "La Liga",
+      type: "League",
+      logo: "https://media-2.api-sports.io/football/leagues/140.png",
+    },
     {
       id: 78,
       name: "Bundesliga",
@@ -58,13 +58,6 @@ async function defaultFavorites(userId, session) {
       name: "Serie A",
       type: "League",
       logo: "https://media-3.api-sports.io/football/leagues/135.png",
-    },
-
-    {
-      id: 140,
-      name: "La Liga",
-      type: "League",
-      logo: "https://media-2.api-sports.io/football/leagues/140.png",
     },
     {
       id: 61,
