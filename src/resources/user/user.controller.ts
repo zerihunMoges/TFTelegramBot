@@ -47,7 +47,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
         .status(400)
         .json({ message: "telegram data verification failed" });
     }
-    console.log("waht not");
+
     let user = await User.findOneAndUpdate(
       { chatId: chatId },
       { firstName, chatId, username }
@@ -58,6 +58,7 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     console.log(user);
 
     return res.status(200).json({
+      id: user.id,
       firstName: user.firstName,
       username: user.username,
       chatId: user.chatId,
