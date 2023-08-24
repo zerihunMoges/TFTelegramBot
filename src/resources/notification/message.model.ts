@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 
 export interface IMessage {
   messageId: string;
-  user: mongoose.Types.ObjectId;
-  channel: mongoose.Types.ObjectId;
+  notification: mongoose.Types.ObjectId;
   messageType: string;
   telegramMessageId: number;
+  message: string;
 }
 
 const MessageSchema = new mongoose.Schema(
@@ -14,11 +14,10 @@ const MessageSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    user: {
+    notification: {
       type: mongoose.Types.ObjectId,
-    },
-    channel: {
-      type: mongoose.Types.ObjectId,
+      ref: "Notification",
+      required: true,
     },
     telegramMessageId: {
       type: Number,
@@ -27,6 +26,9 @@ const MessageSchema = new mongoose.Schema(
     messageType: {
       type: String,
       required: true,
+    },
+    message: {
+      type: String,
     },
   },
   { timestamps: true }

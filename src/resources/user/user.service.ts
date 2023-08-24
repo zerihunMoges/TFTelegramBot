@@ -1,21 +1,38 @@
+import mongoose, { Document, ObjectId } from "mongoose";
 import { Favorite } from "../favorite/favorite.model";
 import { IUser, User } from "./user.model";
 
-export async function createUser(user: IUser): Promise<IUser> {
+export async function createUser(user: IUser): Promise<
+  mongoose.Document<unknown, any, IUser> &
+    Omit<
+      IUser & {
+        _id: mongoose.Types.ObjectId;
+      },
+      never
+    >
+> {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const newUser = await User.create(user);
+    const newUser = await User.create([user], { session });
 
     if (newUser) {
-      await defaultFavorites(newUser.chatId);
+      await defaultFavorites(newUser[0].id, session);
     }
 
-    return newUser;
+    await session.commitTransaction();
+    return newUser[0];
   } catch (err) {
-    console.error("error occurred ", err);
+    console.error("Error occurred", err);
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
   }
 }
 
-async function defaultFavorites(userId) {
+async function defaultFavorites(userId, session) {
   const topLeagues = [
     {
       id: 39,
@@ -57,15 +74,13 @@ async function defaultFavorites(userId) {
     },
   ];
 
-  for (const league of topLeagues) {
-    await Favorite.create({
-      chatId: userId,
-      favID: league.id,
-      favName: league.name,
-      favImage: league.logo,
-      type: "league",
-    });
-    console.log("creating arra");
-  }
-  console.log("finished");
+  const favoriteDocs = topLeagues.map((league) => ({
+    user: userId,
+    favID: league.id,
+    favName: league.name,
+    favImage: league.logo,
+    type: "league",
+  }));
+
+  await Favorite.insertMany(favoriteDocs, { session });
 }

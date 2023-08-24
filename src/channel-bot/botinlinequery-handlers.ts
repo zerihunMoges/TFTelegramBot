@@ -62,7 +62,7 @@ export async function handleLeaguesQuery(
   userChannels
 ) {
   const emptyChar = "‎";
-  const responseData = getLeagues();
+  const responseData = await getLeagues();
   const response = responseData
     .filter(
       (data) =>
@@ -121,7 +121,6 @@ export function extractQuery(query: string) {
     country = countrytemp;
     actualQuery = rest.join(" ");
   } else {
-    console.log("unidentified");
     type = "#Leagues";
     actualQuery = query;
   }

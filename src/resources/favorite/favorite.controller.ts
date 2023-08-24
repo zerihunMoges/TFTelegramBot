@@ -8,18 +8,13 @@ export async function getUserFavorites(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type } = req.query;
+  const { userId, type } = req.query;
 
-  if (!chatId || !type) {
-    return res.status(400).json({ message: "chatId and type required" });
+  if (!userId || !type) {
+    return res.status(400).json({ message: "userId and type required" });
   }
   try {
-    const user = await User.findOne({ chatId: chatId });
-    if (!user) {
-      return res.status(400).json({ message: "user not found" });
-    }
-
-    const favorites = await Favorite.find({ chatId, type });
+    const favorites = await Favorite.find({ user: userId, type });
     res.status(200).json(favorites);
   } catch (err) {
     console.error(err);
@@ -31,23 +26,23 @@ export async function addUserFavorite(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, favID, favName, favImage } = req.body;
+  const { userId, type, favID, favName, favImage } = req.body;
 
   try {
-    if (!chatId || !favID || !type || !favName || !favImage) {
+    if (!userId || !favID || !type || !favName || !favImage) {
       return res.status(400).json({
-        message: "chatId, type, favName, favImage and favId required",
+        message: "userId, type, favName, favImage and favId required",
       });
     }
 
-    if (!User.findOne({ chatId })) {
+    if (!User.findById(userId)) {
       return res.status(400).json({ message: "user not found" });
     }
 
     const favorite = await Favorite.findOneAndUpdate(
-      { chatId, type, favID },
+      { user: userId, type, favID },
       {
-        chatId,
+        user: userId,
         type,
         favID,
         favName,
@@ -69,13 +64,13 @@ export async function removeUserFavorite(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, favID } = req.body;
+  const { userId, type, favID } = req.body;
 
-  if (!chatId || !favID || !type) {
-    return res.status(400).json({ message: "chatId, type and favId required" });
+  if (!userId || !favID || !type) {
+    return res.status(400).json({ message: "userId, type and favId required" });
   }
   try {
-    const finder: any = { chatId, type, favID };
+    const finder: any = { user: userId, type, favID };
 
     const favorite = await Favorite.findOneAndDelete(finder);
     res.status(200).json(favorite);

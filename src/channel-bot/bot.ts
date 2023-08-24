@@ -1,18 +1,20 @@
 import { Telegraf, Markup, Scenes, Context, session } from "telegraf";
 import { InlineKeyboardMarkup, InlineQueryResult } from "telegraf/types";
 import { addChannel } from "../resources/channel/channel.functions";
-import { config } from "../config";
 import {
   extractQuery,
   handleClubsQuery,
   handleLeaguesQuery,
 } from "./botinlinequery-handlers";
-import { Channel } from "../resources/channel/channel.model";
 import {
-  Subscription,
-  ISubscription,
-} from "../resources/clubs/subscription.model";
+  Channel,
+  NotificationSetting,
+} from "../resources/channel/channel.model";
 import { getClub, getLeague, getLeagues } from "./botservice";
+import { config } from "../../config";
+import { Notification } from "../resources/notification/notification.model";
+import { channel } from "diagnostics_channel";
+import { User } from "../resources/user/user.model";
 const LocalSession = require("telegraf-session-local");
 interface SessionData {
   waitingForChannel?: boolean;
@@ -22,7 +24,7 @@ interface MyContext extends Context {
   session: SessionData;
 }
 
-const token = config.botToken;
+const token = config.channelBotToken;
 export const bot = new Telegraf<Scenes.SceneContext>(token);
 
 const localSession = new LocalSession({ database: "example_db.json" });
@@ -37,12 +39,6 @@ stage.register(addChannelScene);
 const pickSubscriptionMethodKeyboard = Markup.inlineKeyboard([
   [Markup.button.switchToCurrentChat("League", "#Leagues ", false)],
   [Markup.button.switchToCurrentChat("Club", "#Clubs England", false)],
-  [
-    {
-      text: "Match",
-      switch_inline_query_current_chat: `#Matches`,
-    },
-  ],
 ]);
 
 bot.telegram.setMyCommands([
@@ -77,14 +73,10 @@ bot.on("chosen_inline_result", (ctx) => {
 });
 
 bot.action(/ans:(.+)/, async (ctx) => {
-  let [chatId, eventType, id, type] = ctx.match[1].split(":");
+  let [channelId, eventType, id, type] = ctx.match[1].split(":");
   try {
-    const subscription = await Subscription.findOne({
-      chatId,
-      subscriptionId: id,
-      type: type,
-    });
-
+    const channel = await Channel.findById(channelId);
+    const subscription = channel.notificationSetting;
     if (eventType.toLowerCase() === "goal")
       subscription.goal = !subscription.goal;
     if (eventType.toLowerCase() === "yellowcard")
@@ -97,54 +89,50 @@ bot.action(/ans:(.+)/, async (ctx) => {
       subscription.substitution = !subscription.substitution;
     if (eventType.toLowerCase() === "var") subscription.var = !subscription.var;
     if (eventType.toLowerCase() === "activate")
-      subscription.active = !subscription.active;
-    console.log(subscription);
+      channel.active = !channel.active;
+
+    await channel.save();
     let answerKeyboard: InlineKeyboardMarkup = {
       inline_keyboard: [
         [
           {
             text: `Goal   ${subscription.goal ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:goal:${id}:${type}`,
+            callback_data: `ans:${channel.id}:goal:${id}:${type}`,
           },
           {
             text: `Yellow Card  ${subscription.yellowCard ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:yellowcard:${id}:${type}`,
+            callback_data: `ans:${channel.id}:yellowcard:${id}:${type}`,
           },
         ],
         [
           {
             text: `Red Card   ${subscription.redCard ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:redcard:${id}:${type}`,
+            callback_data: `ans:${channel.id}:redcard:${id}:${type}`,
           },
           {
             text: `Substitiution   ${subscription.substitution ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:substitution:${id}:${type}`,
+            callback_data: `ans:${channel.id}:substitution:${id}:${type}`,
           },
         ],
         [
           {
             text: `Var   ${subscription.var ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:var:${id}:${type}`,
+            callback_data: `ans:${channel.id}:var:${id}:${type}`,
           },
           {
             text: `Lineups   ${subscription.lineups ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:lineups:${id}:${type}`,
+            callback_data: `ans:${channel.id}:lineups:${id}:${type}`,
           },
         ],
         [
           {
-            text: `${subscription.active ? "Unsubscribe" : "subscribe"}`,
-            callback_data: `ans:${chatId}:activate:${id}:${type}`,
+            text: `${channel.active ? "Unsubscribe" : "subscribe"}`,
+            callback_data: `ans:${channel.id}:activate:${id}:${type}`,
           },
         ],
       ],
     };
 
-    await Subscription.findOneAndUpdate(
-      { chatId, subscriptionId: id, type },
-      subscription,
-      { upsert: true }
-    );
     await ctx.editMessageReplyMarkup(answerKeyboard);
   } catch (err) {
     console.error("error while editing subscriptioin", err);
@@ -154,82 +142,79 @@ bot.action(/ans:(.+)/, async (ctx) => {
 bot.action(/pch:(.+)/, async (ctx) => {
   const [chatId, type, id] = ctx.match[1].split(":");
   try {
-    const chat = await ctx.telegram.getChat(chatId);
+    const chat = await Channel.findOne({ chatId: chatId });
     let name: string;
-    if (chat.type !== "channel") {
-      return;
-    }
+
     if (type.toLowerCase() === "league") {
-      name = getLeague(id).league.name;
+      const league = await getLeague(id);
+      name = league.league.name;
     }
     if (type.toLowerCase() == "club") {
       const club = await getClub(id);
       name = club.team.name;
     }
-    let subscription: ISubscription;
+    let subscription: NotificationSetting;
 
-    subscription = (await Subscription.findOne({
-      chatId,
-      subscriptionId: id,
-      type: type.toLowerCase(),
-    })) || {
-      chatId,
-      chatName: chat.title,
-      subscriptionName: name,
-      subscriptionId: id,
-      type: type,
-      goal: true,
-    };
+    const notfication = await Notification.findOneAndUpdate(
+      {
+        channel: chat.id,
+        notId: id,
+        type: type.toLowerCase(),
+      },
+      {
+        channel: chat.id,
+        targetType: "channel",
+        notId: id,
+        type: type,
+      },
+      { upsert: true }
+    );
+
+    subscription = chat.notificationSetting;
 
     let answerKeyboard: InlineKeyboardMarkup = {
       inline_keyboard: [
         [
           {
             text: `Goal   ${subscription.goal ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:goal:${id}:${type}`,
+            callback_data: `ans:${chat.id}:goal:${id}:${type}`,
           },
           {
             text: `Yellow Card  ${subscription.yellowCard ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:yellowcard:${id}:${type}`,
+            callback_data: `ans:${chat.id}:yellowcard:${id}:${type}`,
           },
         ],
         [
           {
             text: `Red Card   ${subscription.redCard ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:redcard:${id}:${type}`,
+            callback_data: `ans:${chat.id}:redcard:${id}:${type}`,
           },
           {
             text: `Substitiution   ${subscription.substitution ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:substitution:${id}:${type}`,
+            callback_data: `ans:${chat.id}:substitution:${id}:${type}`,
           },
         ],
         [
           {
             text: `Var   ${subscription.var ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:var:${id}:${type}`,
+            callback_data: `ans:${chat.id}:var:${id}:${type}`,
           },
           {
             text: `Lineups   ${subscription.lineups ? "➖" : "➕"}`,
-            callback_data: `ans:${chatId}:lineups:${id}:${type}`,
+            callback_data: `ans:${chat.id}:lineups:${id}:${type}`,
           },
         ],
         [
           {
-            text: `${subscription.active ? "Unsubscribe" : "subscribe"}`,
-            callback_data: `ans:${chatId}:activate:${id}:${type}`,
+            text: `${chat.active ? "Unsubscribe" : "subscribe"}`,
+            callback_data: `ans:${chat.id}:activate:${id}:${type}`,
           },
         ],
       ],
     };
 
-    const result = await Subscription.findOneAndUpdate(
-      { chatId, subscriptionId: id, type: type.toLowerCase() },
-      subscription,
-      { upsert: true }
-    );
-
     await ctx.editMessageText(
-      `📢 ${subscription.chatName} \n\n🔔 Select the live football events of <b>${name}</b> matches you want to receive`,
+      `📢 ${chat.title} \n\n🔔 Select the live football events of <b>${name}</b> matches you want to receive`,
       {
         parse_mode: "HTML",
         reply_markup: answerKeyboard,
@@ -342,9 +327,8 @@ bot.on("inline_query", async (ctx) => {
       },
     };
     let results: InlineQueryResult[] = [];
-
-    const userChannels =
-      (await Channel.find({ userChatIds: { $in: [ctx.from.id] } })) || [];
+    const user = await User.findOne({ chatId: ctx.from.id });
+    const userChannels = await Channel.find({ users: { $in: [user.id] } });
 
     if (type === "#Leagues") {
       header.title = `Leagues: keyword-${actualQuery}`;

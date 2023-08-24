@@ -1,28 +1,28 @@
 import { NextFunction, Request, Response } from "express";
 import { User } from "../user/user.model";
-import { Notification } from "./notification.model";
+import { INotification, Notification } from "./notification.model";
 
 export async function subscribe(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, notId } = req.body;
-  if (!chatId || !notId || !type) {
-    return res.status(400).json({ message: "chatId, type and notId required" });
+  const { userId, type, notId, botToken } = req.body;
+  if (!userId || !notId || !type) {
+    return res.status(400).json({ message: "userId, type and notId required" });
   }
 
   try {
-    const user = await User.findOne({ chatId });
+    const user = await User.findById({ _id: userId });
     if (!user) {
       return res
         .status(400)
-        .json({ message: `user with chatId ${chatId} doesn't exist` });
+        .json({ message: `user with id ${userId} doesn't exist` });
     }
 
     const notification = await Notification.findOneAndUpdate(
-      { chatId, type, notId },
-      { chatId, type, notId, botToken: user.botToken }
+      { type, notId, user: user._id },
+      { type, notId, botToken: botToken || user.botToken }
     );
 
     res.status(200).json(notification);
@@ -38,23 +38,14 @@ export async function unSubscribe(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, type, notId } = req.body;
-  if (!chatId || !notId || !type) {
-    return res.status(400).json({ message: "chatId, type and notId required" });
+  const { id } = req.params;
+  if (!id) {
+    return res.status(400).json({ message: "id required" });
   }
 
   try {
-    const user = await User.findOne({ chatId });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ message: `user with chatId ${chatId} doesn't exist` });
-    }
-
-    const notification = await Notification.findOneAndDelete({
-      chatId,
-      type,
-      notId,
+    const notification = await Notification.findByIdAndDelete({
+      id,
     });
 
     res.status(200).json(notification);
@@ -70,20 +61,14 @@ export async function getUserSubscriptions(
   res: Response,
   next: NextFunction
 ) {
-  const { chatId, club } = req.body;
+  const { userId, club } = req.body;
 
-  if (!chatId) {
+  if (!userId) {
     return res.status(400).json({ message: "chatId required" });
   }
 
   try {
-    const user = await User.findOne({ chatId });
-    if (!user) {
-      return res
-        .status(400)
-        .json({ message: `user with chatId ${chatId} doesn't exist` });
-    }
-    const finder: any = { user: user.id, type: "club", notId: club };
+    const finder: any = { user: userId, type: "club", notId: club };
 
     const notifications = await Notification.find(finder).populate({
       path: "user",
@@ -97,4 +82,59 @@ export async function getUserSubscriptions(
   }
 
   res.status(200);
+}
+
+export async function getAllSubscription(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  try {
+    const subscribers: any = await Notification.find()
+      .populate("user")
+      .populate("channel");
+    const filteredNotifications = subscribers.filter(
+      (notification) =>
+        notification.user?.active || notification.channel?.active
+    );
+    const selectedFields = filteredNotifications.map((notification) => ({
+      id: notification._id,
+      type: notification.type,
+      notId: notification.notId,
+    }));
+    return res.status(200).json({ response: selectedFields });
+  } catch (err) {
+    console.error("error occurred while getting all subscribers: ", err);
+    return res.status(500).json({ message: "" });
+  }
+}
+
+export async function getSubscriptions(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const { home, away, league } = req.query;
+  try {
+    let subscribers: INotification[] = [];
+    if (!home && !league && !away) {
+      return res
+        .status(400)
+        .json({ message: "home id, away id or league id required" });
+    }
+
+    subscribers = await Notification.find({
+      $or: [
+        { $and: [{ type: "league" }, { notId: league }] },
+        {
+          $and: [{ type: "club" }, { $or: [{ notId: home }, { notId: away }] }],
+        },
+      ],
+    });
+
+    return res.status(200).json({ response: subscribers });
+  } catch (err) {
+    console.error("error occurred while getting subscribers: ", err);
+    return res.status(500).json({ message: "" });
+  }
 }

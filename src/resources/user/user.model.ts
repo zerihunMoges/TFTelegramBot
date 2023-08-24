@@ -4,8 +4,9 @@ import { config } from "../../../config";
 
 export interface IUser {
   firstName?: string;
-  chatId: number | string;
+  chatId: number;
   username?: string;
+  active?: boolean;
   isBotConnected?: boolean;
   botToken?: string;
 }
@@ -16,12 +17,16 @@ const UserSchema = new mongoose.Schema(
       type: String,
     },
     chatId: {
-      type: String || Number,
+      type: Number,
       unique: true,
       required: true,
     },
     username: {
       type: String,
+    },
+    active: {
+      type: Boolean,
+      default: true,
     },
     isBotConnected: {
       type: Boolean,

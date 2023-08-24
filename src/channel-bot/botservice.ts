@@ -1,19 +1,29 @@
 import axios from "axios";
 import exp from "constants";
-import { config } from "../config";
-import leagues from "./data/leagues.json";
+import { config } from "../../config";
 
-export function getLeagues(): any[] {
-  const response = leagues as any[];
-  return response;
+export async function getLeagues() {
+  const response = await axios.get(config.apiUrl + "/leagues");
+
+  if (response.status !== 200) {
+    console.log(`Failed to fetch clubs. Status: ${response.status}`);
+    return null;
+  }
+
+  const responseData = response.data;
+  return responseData.response;
 }
 
-export function getLeague(id) {
-  const response = leagues as any[];
+export async function getLeague(id) {
+  const response = await axios.get(config.apiUrl + `/leagues/${id}`);
 
-  return response.filter(
-    ({ league }) => league.id.toString() === id.toString()
-  )[0];
+  if (response.status !== 200) {
+    console.log(`Failed to fetch clubs. Status: ${response.status}`);
+    return null;
+  }
+
+  const responseData = response.data;
+  return responseData.response;
 }
 
 export async function getClubs(country: string) {

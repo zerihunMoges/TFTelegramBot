@@ -18,7 +18,9 @@
         "generic-pool": "^3.9.0",
         "mongoose": "^6.5.1",
         "mongoose-encryption": "^2.1.2",
-        "telegraf": "github:telegraf/telegraf"
+        "telegraf": "github:telegraf/telegraf",
+        "telegraf-session-local": "^2.1.1",
+        "telegraf-stateless-question": "^2.0.1"
     },
     "devDependencies": {
         "@types/amqplib": "^0.10.1",

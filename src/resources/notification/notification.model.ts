@@ -5,7 +5,10 @@ import { User } from "../user/user.model";
 import { Channel } from "../channel/channel.model";
 
 export interface INotification {
-  user: mongoose.Types.ObjectId;
+  _id: mongoose.Types.ObjectId;
+  user?: mongoose.Types.ObjectId;
+  channel?: mongoose.Types.ObjectId;
+  targetType: "channel" | "user";
   type: string;
   notId: string;
 }
@@ -13,12 +16,16 @@ export interface INotification {
 const NotificationSchema = new mongoose.Schema({
   user: {
     type: mongoose.Types.ObjectId,
-    ref: User,
-    required: true,
+    ref: "User",
   },
   channel: {
     type: mongoose.Types.ObjectId,
-    ref: Channel,
+    ref: "Channel",
+  },
+  targetType: {
+    type: String,
+    enum: ["user", "channel"],
+
     required: true,
   },
   type: {

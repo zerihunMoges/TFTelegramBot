@@ -7,6 +7,8 @@ export interface IChannel {
   username: string;
   users: mongoose.Types.ObjectId[];
   postFormats?: PostFormats;
+  active: boolean;
+  notificationSetting: NotificationSetting;
 }
 
 export interface PostFormats {
@@ -20,7 +22,6 @@ export interface NotificationSetting {
   yellowCard?: boolean;
   lineups?: boolean;
   substitution?: boolean;
-  active?: boolean;
 }
 
 const NotificationSettingSchema = new Schema({
@@ -48,12 +49,36 @@ const NotificationSettingSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  active: {
-    type: Boolean,
-    default: false,
-  },
 });
-const PostFormatsSchema = new Schema({
+
+export const defaultNotificationSetting = {
+  goal: true,
+  redCard: false,
+  var: false,
+  yellowCard: false,
+  lineups: false,
+  substitution: false,
+};
+export const defaultPostFormats = {
+  goal: "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Goal</b> - {player}\n<b>Assist</b> - {assist}",
+
+  "own goal":
+    "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Own Goal</b> - {player}",
+
+  penalty:
+    "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Goal</b> - {player} (Penalty)\n{comment}",
+
+  subst: "<b>{time}',</b>  Substitution by {team}, {in} replaces {out}.",
+
+  "yellow card": "<b>{time}'</b>,  🟨 Yellow card, {player} ({team})",
+
+  "red card": "<b>{time}'</b>,  🟥 Red card, {player} ({team})",
+  var: "<b>{time}'</b> 💻 Var, {team}. {detail} - {comment}",
+  "missed penalty":
+    "{time}+{extra}' Penalty Missed, {player} ({team})\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}",
+};
+
+export const PostFormatsSchema = new Schema({
   goal: {
     type: String,
     default:
@@ -82,6 +107,10 @@ const PostFormatsSchema = new Schema({
     type: String,
     default: "<b>{time}',  🟥 Red card, {player} ({team})",
   },
+  var: {
+    type: String,
+    default: "<b>{time}'</b> 💻 Var, {team}. {detail} - {comment}",
+  },
   "missed penalty": {
     type: String,
     default:
@@ -94,42 +123,29 @@ const ChannelSchema = new mongoose.Schema({
     type: String,
   },
   chatId: {
-    type: String || Number,
+    type: Number,
     unique: true,
     required: true,
   },
   username: {
     type: String,
   },
-  userChatIds: {
-    type: [Number],
+  users: {
+    type: [mongoose.Types.ObjectId],
     required: true,
+  },
+  active: {
+    type: Boolean,
+    default: true,
   },
   postFormats: {
     type: PostFormatsSchema,
-    default: {
-      goal: "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Goal</b> - {player}\n<b>Assist</b> - {assist}",
-
-      "own goal":
-        "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Own Goal</b> - {player}",
-
-      penalty:
-        "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Goal</b> - {player} (Penalty)\n{comment}",
-
-      subst: "<b>{time}',</b>  Substitution by {team}, {in} replaces {out}.",
-
-      "yellow card": "<b>{time}'</b>,  🟨 Yellow card, {player} ({team})",
-
-      "red card": "<b>{time}'</b>,  🟥 Red card, {player} ({team})",
-      var: "<b>{time}'</b> 💻 Var, {team}. {detail} - {comment}",
-      "missed penalty":
-        "{time}+{extra}' Penalty Missed, {player} ({team})\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}",
-    },
+    default: defaultPostFormats,
   },
 
   notificationSetting: {
     type: NotificationSettingSchema,
-    default: NotificationSettingSchema,
+    default: defaultNotificationSetting,
   },
 });
 

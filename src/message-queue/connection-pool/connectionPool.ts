@@ -3,7 +3,7 @@ import { createPool } from "generic-pool";
 import { config } from "../../../config";
 
 const opts = {
-  max: 2,
+  max: 10,
   min: 1,
 };
 const factory = {
@@ -15,10 +15,10 @@ const factory = {
     return connection.close();
   },
 };
-const pool = createPool(factory, opts);
+const amqpConnectionPool = createPool(factory, opts);
 const cleanup = async () => {
-  await pool.drain();
-  await pool.clear();
+  await amqpConnectionPool.drain();
+  await amqpConnectionPool.clear();
 };
 
-export { pool, cleanup };
+export { amqpConnectionPool, cleanup };
