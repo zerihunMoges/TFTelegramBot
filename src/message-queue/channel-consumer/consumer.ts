@@ -23,6 +23,7 @@ import { IMessage, Message } from "../../resources/notification/message.model";
 import { Message as TelegrafMessage } from "telegraf/types";
 import { Event } from "../../types/event.type";
 import { config } from "../../../config";
+import { randomInt } from "crypto";
 
 interface Stat {
   home: number | string | null;
@@ -351,9 +352,7 @@ function formatStats(stats, teams: Teams) {
       .filter((stat) => stat)
       .join("");
 
-    console.log(selectedStats);
-
-    return selectedStats;
+    return "\n" + selectedStats + "\n";
   } catch (err) {
     console.error("error occured while formating stats", err);
   }
@@ -389,14 +388,25 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
       let stringMessage: string;
       if (type === "event" && data) {
         const postFormat = await getPostFormat(user, data);
+
+        const nav = `<a href="${config.webApp}?startapp=matchY${matchId}Ysummary">🏟️📝 TimeLine</a>`;
+        const min = 1;
+        const max = 7;
+        const randomInteger = Math.floor(Math.random() * (max - min + 1)) + min;
+
         stringMessage =
-          postFormat && formatEventMessage(data, teams, postFormat);
+          postFormat &&
+          formatEventMessage(data, teams, postFormat) +
+            (randomInteger === 3 && nav);
       } else if (type === "lineup") {
-        stringMessage = formatLineup(data);
+        stringMessage =
+          formatLineup(data) +
+          `\n\n <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">🔄 Substitutes</a>`;
       } else if (type === "FT") {
         const stats = data.statistics;
-        const someStats = stats ? formatStats(stats, teams) + "\n\n" : "";
-        stringMessage = `FT:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n\n${someStats}${config.webApp}`;
+        const someStats = stats ? formatStats(stats, teams) + "\n\n" : "\n";
+
+        stringMessage = `FT:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n${someStats}  <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${config.webApp}?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
       }
 
       if (stringMessage || action === "delete") {
@@ -417,7 +427,6 @@ export async function consumeMessages(queue: "channel" | "user") {
   let channel: Channel;
   try {
     channel = await channelPool.acquire();
-    console.log("start ", queue);
     await channel.consume(queue, async (msg) => handleMessage(msg, channel));
   } catch (err) {
     console.log("error occurred", err);

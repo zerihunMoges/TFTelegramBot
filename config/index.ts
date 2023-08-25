@@ -4,7 +4,7 @@ export const config = {
   webApp: process.env.WEBAPPURL,
   webUrl: process.env.WEBURL,
   apiUrl: process.env.APIURL,
-  mongoUrl: process.env.DATABASEURL,
+  mongoUrl: process.env.LDBURL,
   botToken: process.env.BOTTOKEN,
   channelBotToken: process.env.CHANNELBOTTOKEN,
   port: parseInt(process.env.PORT || "8001"),

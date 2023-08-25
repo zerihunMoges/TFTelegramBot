@@ -12,6 +12,10 @@ import { Favorite, IFavorite } from "../resources/favorite/favorite.model";
 const token = config.botToken;
 const webApp = config.webUrl;
 export const bot = new Telegraf(token);
+
+function wider(text: string) {
+  return `${text}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0`;
+}
 bot.telegram.setMyCommands([]);
 bot.telegram.setChatMenuButton({
   menuButton: {
@@ -23,12 +27,12 @@ bot.telegram.setChatMenuButton({
 bot.catch((err, ctx) => {
   console.error(`Error while handling update ${ctx.update.update_id}:`, err);
   ctx.reply(
-    "Oops! Something went wrong. Our team has been notified and we’re working hard to fix the issue. Please try again later or contact our support if the issue persists."
+    "Oops! Something went wrong. Please try again later or contact our support if the issue persists."
   );
 });
 
 bot.start((ctx) => {
-  ctx.reply("📣 Let's get started", {
+  ctx.reply(wider("📣 Let's get started"), {
     reply_markup: {
       inline_keyboard: [
         [{ text: "Today's Matches", web_app: { url: webApp! } }],
@@ -68,7 +72,7 @@ bot.action(/leagues/, async (ctx) => {
     { text: "Today's Matches", web_app: { url: webApp! } },
     { text: "Back", callback_data: `backToHome` },
   ]);
-  ctx.editMessageText("🏆 Pinned Leagues", {
+  ctx.editMessageText(wider("🏆 Pinned Leagues"), {
     reply_markup: {
       inline_keyboard: keyboards,
     },
@@ -85,7 +89,7 @@ bot.action(/clubs/, async (ctx) => {
     });
   }
 
-  const leagues = await Favorite.find({ user: user.id, type: "clubs" });
+  const leagues = await Favorite.find({ user: user.id, type: "club" });
   const keyboards: InlineKeyboardButton[][] = leagues.map(
     (league: IFavorite) => {
       return [
@@ -101,7 +105,7 @@ bot.action(/clubs/, async (ctx) => {
     { text: "Today's Matches", web_app: { url: webApp! } },
     { text: "Back", callback_data: `backToHome` },
   ]);
-  ctx.editMessageText("🏆 Pinned Leagues", {
+  ctx.editMessageText(wider("🏆 Pinned Leagues"), {
     reply_markup: {
       inline_keyboard: keyboards,
     },
@@ -109,10 +113,15 @@ bot.action(/clubs/, async (ctx) => {
 });
 
 bot.action(/backToHome/, async (ctx) => {
-  ctx.editMessageText("📣 Let's get started", {
+  ctx.editMessageText(wider("📣 Let's get started"), {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Today's Matches", web_app: { url: webApp! } }],
+        [
+          {
+            text: "Today's Matches",
+            web_app: { url: webApp! },
+          },
+        ],
 
         [
           { text: "Leagues", callback_data: `leagues` },

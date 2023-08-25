@@ -56,7 +56,7 @@ export async function unSubscribe(
   res.status(200);
 }
 
-export async function getUserSubscriptions(
+export async function getUserSubscriptionsByClub(
   req: Request,
   res: Response,
   next: NextFunction
@@ -93,10 +93,14 @@ export async function getAllSubscription(
     const subscribers: any = await Notification.find()
       .populate("user")
       .populate("channel");
-    const filteredNotifications = subscribers.filter(
-      (notification) =>
-        notification.user?.active || notification.channel?.active
-    );
+    const uniqueSub = new Set();
+    const filteredNotifications = subscribers.filter((notification) => {
+      if (uniqueSub.has(`${notification.type}-${notification.notId}`))
+        return false;
+      uniqueSub.add(`${notification.type}-${notification.notId}`);
+      return notification.user?.active || notification.channel?.active;
+    });
+
     const selectedFields = filteredNotifications.map((notification) => ({
       id: notification._id,
       type: notification.type,
