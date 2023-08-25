@@ -21,21 +21,25 @@ app.use("/api/subscriptions", notificationRouter);
 export async function start() {
   try {
     await connect();
-    // app.use(
-    //   await bot.createWebhook({
-    //     domain: config.webHookDomain!,
-    //     path: "/" + config.botToken,
-    //   })
-    // );
+    app.use(
+      await bot.createWebhook({
+        domain: config.webHookDomain!,
+        path: "/" + config.botToken,
+      })
+    );
+
+    app.use(
+      await channelBot.createWebhook({
+        domain: config.webHookDomain!,
+        path: "/" + config.channelBotToken,
+      })
+    );
 
     app.listen(config.port, "0.0.0.0", () => {
       console.log(`REST API on http://localhost:${config.port}/api`);
     });
     consumeMessages("channel");
     consumeMessages("user");
-    console.log("launching bot");
-    channelBot.launch();
-    bot.launch();
   } catch (err) {
     console.error("error: ", err);
     cleanup()
