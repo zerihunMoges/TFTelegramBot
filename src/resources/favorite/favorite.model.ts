@@ -3,11 +3,13 @@ import mongoose, { Schema } from "mongoose";
 export interface IFavorite {
   user: mongoose.Types.ObjectId;
   type: string;
-  fav: any;
+  favId: string;
+  favName: string;
+  favImage: string;
 }
 
 const FavoriteSchema = new mongoose.Schema({
-  favID: {
+  favId: {
     type: String,
   },
   favName: {

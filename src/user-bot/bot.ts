@@ -1,11 +1,18 @@
 import { Telegraf, Markup, Scenes, Context, session } from "telegraf";
-import { InlineKeyboardMarkup, InlineQueryResult } from "telegraf/types";
+import {
+  InlineKeyboardButton,
+  InlineKeyboardMarkup,
+  InlineQueryResult,
+} from "telegraf/types";
 import { config } from "../../config";
+import { User } from "../resources/user/user.model";
+import { createUser } from "../resources/user/user.service";
+import { Favorite, IFavorite } from "../resources/favorite/favorite.model";
 
 const token = config.botToken;
-const webApp = config.webApp;
+const webApp = config.webUrl;
 export const bot = new Telegraf(token);
-bot.telegram.setMyCommands([]);
+bot.telegram.setMyCommands([{ command: "start", description: "Start" }]);
 
 bot.catch((err, ctx) => {
   console.error(`Error while handling update ${ctx.update.update_id}:`, err);
@@ -19,11 +26,96 @@ bot.start((ctx) => {
     reply_markup: {
       inline_keyboard: [
         [{ text: "Today's Matches", web_app: { url: webApp! } }],
+
+        [
+          { text: "Leagues", callback_data: `leagues` },
+          { text: "Clubs", callback_data: `clubs` },
+        ],
       ],
     },
   });
 });
 
+bot.action(/leagues/, async (ctx) => {
+  let user = await User.findOne({ chatId: ctx.from.id });
+  if (!user) {
+    user = await createUser({
+      chatId: ctx.from.id,
+      firstName: ctx.from.first_name,
+      username: ctx.from.username,
+    });
+  }
+
+  const leagues = await Favorite.find({ user: user.id, type: "league" });
+  const keyboards: InlineKeyboardButton[][] = leagues.map(
+    (league: IFavorite) => {
+      return [
+        {
+          text: league.favName,
+          web_app: { url: `${config.webUrl}/leagues/${league.favId}` },
+        },
+      ];
+    }
+  );
+
+  keyboards.push([
+    { text: "Today's Matches", web_app: { url: webApp! } },
+    { text: "Back", callback_data: `backtohome` },
+  ]);
+  ctx.editMessageText("🏆 Pinned Leagues", {
+    reply_markup: {
+      inline_keyboard: keyboards,
+    },
+  });
+});
+
+bot.action(/clubs/, async (ctx) => {
+  let user = await User.findOne({ chatId: ctx.from.id });
+  if (!user) {
+    user = await createUser({
+      chatId: ctx.from.id,
+      firstName: ctx.from.first_name,
+      username: ctx.from.username,
+    });
+  }
+
+  const leagues = await Favorite.find({ user: user.id, type: "clubs" });
+  const keyboards: InlineKeyboardButton[][] = leagues.map(
+    (league: IFavorite) => {
+      return [
+        {
+          text: league.favName,
+          web_app: { url: `${config.webUrl}/clubs/${league.favId}` },
+        },
+      ];
+    }
+  );
+
+  keyboards.push([
+    { text: "Today's Matches", web_app: { url: webApp! } },
+    { text: "Back", callback_data: `backtohome` },
+  ]);
+  ctx.editMessageText("🏆 Pinned Leagues", {
+    reply_markup: {
+      inline_keyboard: keyboards,
+    },
+  });
+});
+
+bot.action(/backtohome/, async (ctx) => {
+  ctx.editMessageText("📣 Let's get started", {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "Today's Matches", web_app: { url: webApp! } }],
+
+        [
+          { text: "Leagues", callback_data: `leagues` },
+          { text: "Clubs", callback_data: `clubs` },
+        ],
+      ],
+    },
+  });
+});
 // bot.telegram.setWebhook(config.webHookDomain + "/" + config.botToken);
 
 process.once("SIGINT", () => bot.stop("SIGINT"));

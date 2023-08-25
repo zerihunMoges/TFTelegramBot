@@ -8,6 +8,7 @@ import notificationRouter from "./resources/notification/notification.route";
 import { cleanup } from "./message-queue/connection-pool/connectionPool";
 import { consumeMessages } from "./message-queue/channel-consumer/consumer";
 import { bot as channelBot } from "./channel-bot/bot";
+import { bot } from "./user-bot/bot";
 
 const app = express();
 app.use(express.json());
@@ -34,6 +35,7 @@ export async function start() {
     consumeMessages("user");
     console.log("launching bot");
     channelBot.launch();
+    bot.launch();
   } catch (err) {
     console.error("error: ", err);
     cleanup()
