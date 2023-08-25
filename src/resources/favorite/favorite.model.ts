@@ -11,9 +11,11 @@ export interface IFavorite {
 const FavoriteSchema = new mongoose.Schema({
   favId: {
     type: String,
+    required: true,
   },
   favName: {
     type: String,
+    required: true,
   },
   favImage: {
     type: String,

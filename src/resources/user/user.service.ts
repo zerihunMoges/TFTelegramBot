@@ -69,7 +69,7 @@ async function defaultFavorites(userId, session) {
 
   const favoriteDocs = topLeagues.map((league) => ({
     user: userId,
-    favID: league.id,
+    favId: league.id,
     favName: league.name,
     favImage: league.logo,
     type: "league",
