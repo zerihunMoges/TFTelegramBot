@@ -6,7 +6,7 @@ import favoriteRouter from "./resources/favorite/favorite.route";
 import userRouter from "./resources/user/user.route";
 import notificationRouter from "./resources/notification/notification.route";
 import { cleanup } from "./message-queue/connection-pool/connectionPool";
-import { consumeMessages } from "./message-queue/channel-consumer/consumer";
+import { consumeMessages } from "./message-queue/consumer";
 import { bot as channelBot } from "./channel-bot/bot";
 import { bot } from "./user-bot/bot";
 
@@ -40,6 +40,7 @@ export async function start() {
     });
     consumeMessages("channel");
     consumeMessages("user");
+    channelBot.launch();
   } catch (err) {
     console.error("error: ", err);
     cleanup()

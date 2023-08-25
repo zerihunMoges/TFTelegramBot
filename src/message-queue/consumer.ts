@@ -1,28 +1,29 @@
 // consumer.ts
 import { Channel, ConsumeMessage } from "amqplib";
-import { Action, MessageType } from "../../types/action.type";
-import { bot as channelBot } from "../../channel-bot/bot";
+import { Action, MessageType } from "../types/action.type";
+import { bot as channelBot } from "../channel-bot/bot";
 import {
   INotification,
   Notification,
-} from "../../resources/notification/notification.model";
-import { Teams } from "../../types/team.type";
+} from "../resources/notification/notification.model";
+import { Teams } from "../types/team.type";
 import {
   IChannel,
+  NotificationSetting,
   PostFormats,
   PostFormatsSchema,
   Channel as TelegramChannel,
   defaultPostFormats,
-} from "../../resources/channel/channel.model";
-import { channelPool } from "../connection-pool/channelPool";
+} from "../resources/channel/channel.model";
+import { channelPool } from "./connection-pool/channelPool";
 import { Telegraf } from "telegraf";
 import mongoose from "mongoose";
-import { IUser, User } from "../../resources/user/user.model";
+import { IUser, User } from "../resources/user/user.model";
 import { error } from "console";
-import { IMessage, Message } from "../../resources/notification/message.model";
+import { IMessage, Message } from "../resources/notification/message.model";
 import { Message as TelegrafMessage } from "telegraf/types";
-import { Event } from "../../types/event.type";
-import { config } from "../../../config";
+import { Event } from "../types/event.type";
+import { config } from "../../config";
 import { randomInt } from "crypto";
 
 interface Stat {
@@ -360,10 +361,22 @@ function formatStats(stats, teams: Teams) {
   return "";
 }
 
+function isActive(type: string, detail: string, setting: NotificationSetting) {
+  return type?.toLowerCase() === "goal"
+    ? setting.goal
+    : type?.toLowerCase() === "subst"
+    ? setting.substitution
+    : detail?.toLowerCase() === "yellow card"
+    ? setting.yellowCard
+    : detail?.toLowerCase() === "red card"
+    ? setting.redCard
+    : type?.toLowerCase() === "var"
+    ? setting.var
+    : type.toLowerCase() === "lineup" && setting.lineups;
+}
 async function handleMessage(msg: ConsumeMessage, channel: Channel) {
   try {
     if (msg) {
-      console.log("got message");
       const { message, user }: { message: any; user: INotification } =
         JSON.parse(msg.content.toString());
 
@@ -374,7 +387,7 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
       let teams: Teams;
       ({ teams, action, matchId, type, data } = message);
 
-      // data.type?.toLowerCase() === "goal"
+      //type?.toLowerCase() === "goal"
       //   ? subscription.goal
       //   : data.type?.toLowerCase() === "subst"
       //   ? subscription.substitution

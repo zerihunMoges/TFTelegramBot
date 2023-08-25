@@ -149,8 +149,9 @@ bot.action(/pch:(.+)/, async (ctx) => {
       const league = await getLeague(id);
       name = league.league.name;
     }
-    if (type.toLowerCase() == "club") {
+    if (type.toLowerCase() === "club") {
       const club = await getClub(id);
+
       name = club.team.name;
     }
     let subscription: NotificationSetting;

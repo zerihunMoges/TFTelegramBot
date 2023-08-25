@@ -41,7 +41,7 @@ export async function getClubs(country: string) {
 }
 
 export async function getClub(id: string) {
-  const apiUrl = config.apiUrl + `/clubs?id=${id}`;
+  const apiUrl = config.apiUrl + `/clubs/${id}`;
 
   const response = await axios.get(apiUrl);
 
@@ -51,5 +51,5 @@ export async function getClub(id: string) {
   }
 
   const responseData = response.data;
-  return responseData.response[0];
+  return responseData.response;
 }
