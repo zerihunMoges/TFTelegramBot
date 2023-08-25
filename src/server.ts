@@ -40,7 +40,6 @@ export async function start() {
     });
     consumeMessages("channel");
     consumeMessages("user");
-    channelBot.launch();
   } catch (err) {
     console.error("error: ", err);
     cleanup()
