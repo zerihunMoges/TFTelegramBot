@@ -26,10 +26,10 @@ export async function addUserFavorite(
   res: Response,
   next: NextFunction
 ) {
-  const { userId, type, favID, favName, favImage } = req.body;
+  const { userId, type, favId, favName, favImage } = req.body;
 
   try {
-    if (!userId || !favID || !type || !favName || !favImage) {
+    if (!userId || !favId || !type || !favName || !favImage) {
       return res.status(400).json({
         message: "userId, type, favName, favImage and favId required",
       });
@@ -40,11 +40,11 @@ export async function addUserFavorite(
     }
 
     const favorite = await Favorite.findOneAndUpdate(
-      { user: userId, type, favID },
+      { user: userId, type, favId },
       {
         user: userId,
         type,
-        favID,
+        favId,
         favName,
         favImage,
       },
@@ -64,13 +64,13 @@ export async function removeUserFavorite(
   res: Response,
   next: NextFunction
 ) {
-  const { userId, type, favID } = req.body;
+  const { userId, type, favId } = req.body;
 
-  if (!userId || !favID || !type) {
+  if (!userId || !favId || !type) {
     return res.status(400).json({ message: "userId, type and favId required" });
   }
   try {
-    const finder: any = { user: userId, type, favID };
+    const finder: any = { user: userId, type, favId };
 
     const favorite = await Favorite.findOneAndDelete(finder);
     res.status(200).json(favorite);

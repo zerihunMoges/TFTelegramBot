@@ -12,8 +12,14 @@ import { Favorite, IFavorite } from "../resources/favorite/favorite.model";
 const token = config.botToken;
 const webApp = config.webUrl;
 export const bot = new Telegraf(token);
-bot.telegram.setMyCommands([{ command: "start", description: "Start" }]);
-
+bot.telegram.setMyCommands([]);
+bot.telegram.setChatMenuButton({
+  menuButton: {
+    type: "web_app",
+    text: "Today's Matches",
+    web_app: { url: webApp },
+  },
+});
 bot.catch((err, ctx) => {
   console.error(`Error while handling update ${ctx.update.update_id}:`, err);
   ctx.reply(
@@ -52,7 +58,7 @@ bot.action(/leagues/, async (ctx) => {
       return [
         {
           text: league.favName,
-          web_app: { url: `${config.webUrl}/leagues/${league.favId}` },
+          web_app: { url: `${config.webUrl}/league/${league.favId}` },
         },
       ];
     }
@@ -60,7 +66,7 @@ bot.action(/leagues/, async (ctx) => {
 
   keyboards.push([
     { text: "Today's Matches", web_app: { url: webApp! } },
-    { text: "Back", callback_data: `backtohome` },
+    { text: "Back", callback_data: `backToHome` },
   ]);
   ctx.editMessageText("🏆 Pinned Leagues", {
     reply_markup: {
@@ -85,7 +91,7 @@ bot.action(/clubs/, async (ctx) => {
       return [
         {
           text: league.favName,
-          web_app: { url: `${config.webUrl}/clubs/${league.favId}` },
+          web_app: { url: `${config.webUrl}/club/${league.favId}` },
         },
       ];
     }
@@ -93,7 +99,7 @@ bot.action(/clubs/, async (ctx) => {
 
   keyboards.push([
     { text: "Today's Matches", web_app: { url: webApp! } },
-    { text: "Back", callback_data: `backtohome` },
+    { text: "Back", callback_data: `backToHome` },
   ]);
   ctx.editMessageText("🏆 Pinned Leagues", {
     reply_markup: {
@@ -102,7 +108,7 @@ bot.action(/clubs/, async (ctx) => {
   });
 });
 
-bot.action(/backtohome/, async (ctx) => {
+bot.action(/backToHome/, async (ctx) => {
   ctx.editMessageText("📣 Let's get started", {
     reply_markup: {
       inline_keyboard: [
@@ -116,6 +122,8 @@ bot.action(/backtohome/, async (ctx) => {
     },
   });
 });
+
+bot.action(/connectBot/, async (ctx) => {});
 // bot.telegram.setWebhook(config.webHookDomain + "/" + config.botToken);
 
 process.once("SIGINT", () => bot.stop("SIGINT"));
