@@ -288,9 +288,7 @@ function formatLineup(data) {
     `${awayTeam?.name} StartXI: ${awayFormation && awayFormation}\n\n` +
     awayStartXI.map((player) => player.player.name).join("; ");
 
-  const stringMessage =
-    `TeamNews 📋\n\n${homeFormated}\n\n${awayFormated}` +
-    `\n\nhttp://t.me/TeleFootballBot/app`;
+  const stringMessage = `TeamNews 📋\n\n${homeFormated}\n\n${awayFormated}`;
 
   return stringMessage;
 }
@@ -302,7 +300,14 @@ async function getPostFormat(user: INotification, data: Event) {
       _id: user.channel,
     });
     if (!telegramChannel) return;
-
+    if (
+      !isEventNotfActive(
+        data.type,
+        data.detail,
+        telegramChannel.notificationSetting
+      )
+    )
+      return;
     postFormats = telegramChannel.postFormats;
   }
   const postFormat: string =
@@ -361,7 +366,11 @@ function formatStats(stats, teams: Teams) {
   return "";
 }
 
-function isActive(type: string, detail: string, setting: NotificationSetting) {
+function isEventNotfActive(
+  type: string,
+  detail: string,
+  setting: NotificationSetting
+) {
   return type?.toLowerCase() === "goal"
     ? setting.goal
     : type?.toLowerCase() === "subst"
@@ -370,9 +379,7 @@ function isActive(type: string, detail: string, setting: NotificationSetting) {
     ? setting.yellowCard
     : detail?.toLowerCase() === "red card"
     ? setting.redCard
-    : type?.toLowerCase() === "var"
-    ? setting.var
-    : type.toLowerCase() === "lineup" && setting.lineups;
+    : type?.toLowerCase() === "var" && setting.var;
 }
 async function handleMessage(msg: ConsumeMessage, channel: Channel) {
   try {
@@ -387,39 +394,33 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
       let teams: Teams;
       ({ teams, action, matchId, type, data } = message);
 
-      //type?.toLowerCase() === "goal"
-      //   ? subscription.goal
-      //   : data.type?.toLowerCase() === "subst"
-      //   ? subscription.substitution
-      //   : data.detail?.toLowerCase() === "yellow card"
-      //   ? subscription.yellowCard
-      //   : data.detail?.toLowerCase() === "red card"
-      //   ? subscription.redCard
-      //   : data.type?.toLowerCase() === "var"
-      //   ? subscription.var
-      //   : type.toLowerCase() === "lineup" && subscription.lineups;
       let stringMessage: string;
       if (type === "event" && data) {
         const postFormat = await getPostFormat(user, data);
+        if (postFormat) {
+          const nav = `\n\n<a href="${config.webApp}?startapp=matchY${matchId}Ysummary">  🏟️📝 TimeLine</a>`;
+          const min = 1;
+          const max = 7;
+          const randomInteger =
+            Math.floor(Math.random() * (max - min + 1)) + min;
 
-        const nav = `<a href="${config.webApp}?startapp=matchY${matchId}Ysummary">🏟️📝 TimeLine</a>`;
-        const min = 1;
-        const max = 7;
-        const randomInteger = Math.floor(Math.random() * (max - min + 1)) + min;
-
-        stringMessage =
-          postFormat &&
-          formatEventMessage(data, teams, postFormat) +
-            (randomInteger === 3 && nav);
+          stringMessage =
+            formatEventMessage(data, teams, postFormat) +
+            (data?.type?.toLowerCase() === "goal" ? nav : "");
+        }
       } else if (type === "lineup") {
-        stringMessage =
-          formatLineup(data) +
-          `\n\n <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">🔄 Substitutes</a>`;
-      } else if (type === "FT") {
+        const notSetting = (await TelegramChannel.findById(user._id))
+          .notificationSetting;
+        if (notSetting.lineups) {
+          stringMessage =
+            formatLineup(data) +
+            `\n\n <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">🔄 Substitutes</a>`;
+        }
+      } else if (type === "FT" || type === "HT") {
         const stats = data.statistics;
         const someStats = stats ? formatStats(stats, teams) + "\n\n" : "\n";
 
-        stringMessage = `FT:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n${someStats}  <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${config.webApp}?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
+        stringMessage = `${type}:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n${someStats}  <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${config.webApp}?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
       }
 
       if (stringMessage || action === "delete") {
@@ -428,11 +429,11 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
         else if (user.targetType === "user")
           await sendUserMessage(stringMessage, type, data.id, action, user);
       }
-
-      channel.ack(msg);
     }
   } catch (err) {
     console.error("error handling message", err);
+  } finally {
+    channel.ack(msg);
   }
 }
 
