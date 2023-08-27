@@ -72,7 +72,7 @@ async function sendTelegramMessage(
 
   await saveMessage(
     type,
-    notification._id,
+    notification,
     messageId,
     sentMessage.message_id,
     message
@@ -211,6 +211,7 @@ async function sendChannelMessage(
       notification: notification._id,
       messageId,
     });
+    console.log("saved message", savedMessage.id);
     if (action === "put" && savedMessage) {
       return await editTelegramMessage(
         message,

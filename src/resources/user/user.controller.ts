@@ -55,7 +55,6 @@ export async function login(req: Request, res: Response, next: NextFunction) {
     if (!user) {
       user = await createUser({ firstName, chatId, username });
     }
-    console.log(user);
 
     return res.status(200).json({
       id: user.id,
