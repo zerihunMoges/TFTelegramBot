@@ -208,7 +208,7 @@ async function sendChannelMessage(
 
     const savedMessage = await Message.findOne({
       messageType: type,
-      user: notification.user,
+      notification: notification._id,
       messageId,
     });
     if (action === "put" && savedMessage) {
@@ -420,7 +420,7 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
         const stats = data.statistics;
         const someStats = stats ? formatStats(stats, teams) + "\n\n" : "\n";
 
-        stringMessage = `${type}:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n${someStats}  <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${config.webApp}?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
+        stringMessage = `${type}:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n${someStats}<a href="${config.webApp}?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${config.webApp}?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
       }
 
       if (stringMessage || action === "delete") {
