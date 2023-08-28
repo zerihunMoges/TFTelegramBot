@@ -43,9 +43,7 @@ export async function unSubscribe(
   }
 
   try {
-    const notification = await Notification.findByIdAndDelete({
-      id,
-    });
+    const notification = await Notification.findByIdAndDelete(id);
 
     res.status(200).json({ response: notification });
   } catch (err) {
