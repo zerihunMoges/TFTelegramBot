@@ -16,8 +16,7 @@ app.use(cors({ origin: true }));
 
 app.use("/api/favorites", favoriteRouter);
 app.use("/api/users", userRouter);
-app.use("/api/notfication", notificationRouter);
-app.use("/api/subscriptions", notificationRouter);
+app.use("/api/notfications", notificationRouter);
 export async function start() {
   try {
     await connect();

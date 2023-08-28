@@ -7,7 +7,7 @@ export async function subscribe(
   res: Response,
   next: NextFunction
 ) {
-  const { userId, type, notId, botToken } = req.body;
+  const { userId, type, notId } = req.body;
   if (!userId || !notId || !type) {
     return res.status(400).json({ message: "userId, type and notId required" });
   }
@@ -22,15 +22,14 @@ export async function subscribe(
 
     const notification = await Notification.findOneAndUpdate(
       { type, notId, user: user._id },
-      { type, notId, botToken: botToken || user.botToken }
+      { type, notId, targetType: "user" },
+      { upsert: true }
     );
 
-    res.status(200).json(notification);
+    res.status(200).json({ response: notification });
   } catch (err) {
-    return res.status(500);
+    return res.status(500).json({ message: "internal server error" });
   }
-
-  res.status(200);
 }
 
 export async function unSubscribe(
@@ -48,12 +47,10 @@ export async function unSubscribe(
       id,
     });
 
-    res.status(200).json(notification);
+    res.status(200).json({ response: notification });
   } catch (err) {
     return res.status(500);
   }
-
-  res.status(200);
 }
 
 export async function getUserSubscriptionsByClub(
@@ -61,27 +58,25 @@ export async function getUserSubscriptionsByClub(
   res: Response,
   next: NextFunction
 ) {
-  const { userId, club } = req.body;
+  const { userId, notId } = req.query;
 
   if (!userId) {
     return res.status(400).json({ message: "chatId required" });
   }
 
   try {
-    const finder: any = { user: userId, type: "club", notId: club };
+    const finder: any = { user: userId, type: "club", notId: notId };
 
-    const notifications = await Notification.find(finder).populate({
+    const notification = await Notification.findOne(finder).populate({
       path: "user",
       model: User,
       select: "-__v",
     });
 
-    res.status(200).json(notifications);
+    res.status(200).json({ response: notification });
   } catch (err) {
-    return res.status(500);
+    return res.status(500).json({ message: "internal server error" });
   }
-
-  res.status(200);
 }
 
 export async function getAllSubscription(

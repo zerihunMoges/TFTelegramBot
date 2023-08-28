@@ -261,6 +261,7 @@ function formatEventMessage(data: any, teams: any, postFormat: string) {
     awayteam: teams.away.name,
     player: data.player.name ? data.player.name : "",
     assist: data.assist.name ? data.assist.name : "",
+    comment: data.comments ? data.comments : "",
   };
 
   const message = postFormat.replace(/{([^{}]*)}/g, (a, b) => {
