@@ -37,12 +37,12 @@ export async function unSubscribe(
   res: Response,
   next: NextFunction
 ) {
-  const { id } = req.params;
-  if (!id) {
-    return res.status(400).json({ message: "id required" });
-  }
-
   try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ message: "id required" });
+    }
+
     const notification = await Notification.findByIdAndDelete(id);
 
     res.status(200).json({ response: notification });
