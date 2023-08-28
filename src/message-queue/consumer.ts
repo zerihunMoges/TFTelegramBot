@@ -411,8 +411,12 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
             (data?.type?.toLowerCase() === "goal" ? nav : "");
         }
       } else if (type === "lineup") {
-        const channel = await TelegramChannel.findById(user.channel);
-        const notSetting = channel.notificationSetting;
+        let notSetting: any = { lineups: true };
+        if (user.targetType === "channel") {
+          const channel = await TelegramChannel.findById(user.channel);
+          notSetting = channel.notificationSetting;
+        }
+
         if (notSetting.lineups) {
           stringMessage =
             formatLineup(data) +
