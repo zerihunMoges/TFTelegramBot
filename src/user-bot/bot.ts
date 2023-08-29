@@ -10,7 +10,7 @@ import { createUser } from "../resources/user/user.service";
 import { Favorite, IFavorite } from "../resources/favorite/favorite.model";
 import { message } from "telegraf/filters";
 
-const token = "6589781420:AAE5fXufYISaSGOilIZvP1dn79tmeNAX0g8";
+const token = config.botToken;
 const webApp = config.webUrl;
 const startKeyboard = [
   [{ text: "Today's Matches", web_app: { url: webApp! } }],
@@ -19,9 +19,8 @@ const startKeyboard = [
     { text: "Leagues", callback_data: `leagues` },
     { text: "Clubs", callback_data: `clubs` },
   ],
-  [{ text: "⚙️ Notification Settings", callback_data: `notsettings` }],
 ];
-
+// [{ text: "⚙️ Notification Settings", callback_data: `notsettings` }]
 export const bot = new Telegraf<Scenes.SceneContext>(token);
 
 export const connectBotScene = new Scenes.BaseScene<any>("connect_bot_scene");

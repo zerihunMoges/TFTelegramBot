@@ -24,7 +24,7 @@ export interface NotificationSetting {
   substitution?: boolean;
 }
 
-const NotificationSettingSchema = new Schema({
+const NotificationSettingSchema = new Schema<NotificationSetting>({
   goal: {
     type: Boolean,
     default: true,

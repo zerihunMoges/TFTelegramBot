@@ -9,7 +9,53 @@ export interface IUser {
   active?: boolean;
   isBotConnected?: boolean;
   botToken?: string;
+  notificationSetting?: NotificationSetting;
 }
+
+export interface NotificationSetting {
+  goal?: boolean;
+  redCard?: boolean;
+  var?: boolean;
+  yellowCard?: boolean;
+  lineups?: boolean;
+  substitution?: boolean;
+}
+
+const NotificationSettingSchema = new Schema<NotificationSetting>({
+  goal: {
+    type: Boolean,
+    default: true,
+  },
+  redCard: {
+    type: Boolean,
+    default: false,
+  },
+  var: {
+    type: Boolean,
+    default: false,
+  },
+  yellowCard: {
+    type: Boolean,
+    default: false,
+  },
+  lineups: {
+    type: Boolean,
+    default: false,
+  },
+  substitution: {
+    type: Boolean,
+    default: false,
+  },
+});
+
+export const defaultNotificationSetting = {
+  goal: true,
+  redCard: false,
+  var: false,
+  yellowCard: false,
+  lineups: false,
+  substitution: false,
+};
 
 const UserSchema = new mongoose.Schema(
   {
