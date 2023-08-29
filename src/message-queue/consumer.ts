@@ -143,7 +143,7 @@ async function sendUserMessage(
 
     const savedMessage = await Message.findOne({
       messageType: type,
-      user: notification.user,
+      notification: notification._id,
       messageId,
     });
     if (action === "put" && savedMessage) {
