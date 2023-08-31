@@ -1,6 +1,8 @@
 import axios from "axios";
 import exp from "constants";
 import { config } from "../../config";
+import { LeagueData } from "../types/league.type";
+import { Club } from "../types/club.type";
 
 export async function getLeagues() {
   const response = await axios.get(config.apiUrl + "/leagues");
@@ -14,7 +16,7 @@ export async function getLeagues() {
   return responseData.response;
 }
 
-export async function getLeague(id) {
+export async function getLeague(id): Promise<LeagueData> {
   const response = await axios.get(config.apiUrl + `/leagues/${id}`);
 
   if (response.status !== 200) {
@@ -40,7 +42,7 @@ export async function getClubs(country: string) {
   return responseData.response;
 }
 
-export async function getClub(id: string) {
+export async function getClub(id: string): Promise<Club> {
   const apiUrl = config.apiUrl + `/clubs/${id}`;
 
   const response = await axios.get(apiUrl);

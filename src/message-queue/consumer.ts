@@ -11,7 +11,6 @@ import {
   IChannel,
   NotificationSetting,
   PostFormats,
-  PostFormatsSchema,
   Channel as TelegramChannel,
   defaultPostFormats,
 } from "../resources/channel/channel.model";
@@ -19,12 +18,10 @@ import { channelPool } from "./connection-pool/channelPool";
 import { Telegraf } from "telegraf";
 import mongoose from "mongoose";
 import { IUser, User } from "../resources/user/user.model";
-import { error } from "console";
-import { IMessage, Message } from "../resources/notification/message.model";
+import { Message } from "../resources/notification/message.model";
 import { Message as TelegrafMessage } from "telegraf/types";
 import { Event } from "../types/event.type";
 import { config } from "../../config";
-import { randomInt } from "crypto";
 
 interface Stat {
   home: number | string | null;
@@ -33,6 +30,9 @@ interface Stat {
 interface FormattedStatistic {
   [statType: string]: Stat;
 }
+
+const overShortStatus = new Set(["FT", "AET", "PEN"]);
+const breakTime = new Set(["HT", "BT"]);
 
 async function editTelegramMessage(
   message: string,
@@ -211,7 +211,7 @@ async function sendChannelMessage(
       notification: notification._id,
       messageId,
     });
-    console.log("saved message", savedMessage.id);
+
     if (action === "put" && savedMessage) {
       return await editTelegramMessage(
         message,
@@ -295,23 +295,24 @@ function formatLineup(data) {
   return stringMessage;
 }
 
-async function getPostFormat(user: INotification, data: Event) {
+async function getPostFormat(
+  user: INotification,
+  data: Event,
+  target: IChannel | IUser
+) {
   let postFormats: PostFormats = defaultPostFormats;
-  if (user.targetType === "channel") {
-    const telegramChannel: IChannel = await TelegramChannel.findById({
-      _id: user.channel,
-    });
-    if (!telegramChannel) return;
-    if (
-      !isEventNotfActive(
-        data.type,
-        data.detail,
-        telegramChannel.notificationSetting
-      )
+  if (user.targetType === "channel")
+    postFormats = (target as IChannel).postFormats;
+  if (
+    !isEventNotfActive(
+      data.type,
+      data.detail,
+      target.notificationSetting,
+      user.notificationSetting
     )
-      return;
-    postFormats = telegramChannel.postFormats;
-  }
+  )
+    return;
+
   const postFormat: string =
     postFormats[data.detail?.toLowerCase()] ||
     postFormats[data.type?.toLowerCase()];
@@ -321,10 +322,53 @@ async function getPostFormat(user: INotification, data: Event) {
 
 function formatStats(stats, teams: Teams) {
   const pickedStats = [
+    { type: "expected_goals", name: "XG - Expected Goals", score: -1 },
     { type: "Ball Possession", name: "Possession", score: 0 },
     { type: "Passes %", name: "Pass Accuracy" },
     { type: "Passes accurate", name: "Accurate Passes" },
-    { type: "expected_goals", name: "XG - Expected Goals", score: -1 },
+
+    {
+      type: "Total Shots",
+      name: "Total Shots",
+    },
+    {
+      type: "Shots on Goal",
+      name: "Shots On Target",
+    },
+    {
+      type: "Shots off Goal",
+      name: "Shots off Target",
+    },
+
+    {
+      type: "Blocked Shots",
+      name: "Blocked Shots",
+    },
+
+    {
+      type: "Fouls",
+      name: "Fouls",
+    },
+    {
+      type: "Corner Kicks",
+      name: "Corner Kicks",
+    },
+    {
+      type: "Offsides",
+      value: 3,
+    },
+    {
+      type: "Yellow Cards",
+      name: "Yellow Cards",
+    },
+    {
+      type: "Red Cards",
+      name: "Red Cards",
+    },
+    {
+      type: "Goalkeeper Saves",
+      name: "Goalkeeper Saves",
+    },
   ];
 
   try {
@@ -349,11 +393,10 @@ function formatStats(stats, teams: Teams) {
       .map((pick) => {
         if (
           pick.type in formatedStats &&
-          formatedStats[pick.type].home &&
-          formatedStats[pick.type].away
+          (formatedStats[pick.type].home || formatedStats[pick.type].away)
         ) {
-          return `${pick.name}: ${formatedStats[pick.type].home} - ${
-            formatedStats[pick.type].away
+          return `${pick.name}: ${formatedStats[pick.type].home || 0} - ${
+            formatedStats[pick.type].away || 0
           }\n`;
         }
       })
@@ -370,19 +413,27 @@ function formatStats(stats, teams: Teams) {
 
 function isEventNotfActive(
   type: string,
-  detail: string,
+  subType: string,
+  userSetting: NotificationSetting,
   setting: NotificationSetting
 ) {
   return type?.toLowerCase() === "goal"
-    ? setting.goal
+    ? (!setting || setting.goal) && userSetting.goal
     : type?.toLowerCase() === "subst"
-    ? setting.substitution
-    : detail?.toLowerCase() === "yellow card"
-    ? setting.yellowCard
-    : detail?.toLowerCase() === "red card"
-    ? setting.redCard
-    : type?.toLowerCase() === "var" && setting.var;
+    ? (!setting || setting.substitution) && userSetting.substitution
+    : subType?.toLowerCase() === "yellow card"
+    ? (!setting || setting.yellowCard) && userSetting.yellowCard
+    : subType?.toLowerCase() === "red card"
+    ? (!setting || setting.redCard) && userSetting.redCard
+    : type?.toLowerCase() === "var"
+    ? (!setting || setting.var) && userSetting.var
+    : type?.toLowerCase() === "ft"
+    ? (!setting || setting.FT) && userSetting.FT
+    : type?.toLowerCase() === "break" &&
+      (!setting || setting.break) &&
+      userSetting.break;
 }
+
 async function handleMessage(msg: ConsumeMessage, channel: Channel) {
   try {
     if (msg) {
@@ -397,36 +448,59 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
       ({ teams, action, matchId, type, data } = message);
 
       let stringMessage: string;
-      if (type === "event" && data) {
-        const postFormat = await getPostFormat(user, data);
+
+      let target: IChannel | IUser;
+      if (user.targetType === "channel") {
+        target = await TelegramChannel.findById({
+          _id: user.channel,
+        });
+      }
+      if (user.targetType === "user") {
+        target = await User.findById(user.user);
+      }
+
+      if (
+        type === "event" &&
+        data &&
+        data.comments?.toLowerCase() !== "penalty shootout"
+      ) {
+        const postFormat = await getPostFormat(user, data, target);
         if (postFormat) {
           const nav = `\n\n<a href="${config.webApp}?startapp=matchY${matchId}Ysummary">  🏟️📝 TimeLine</a>`;
-          const min = 1;
-          const max = 7;
-          const randomInteger =
-            Math.floor(Math.random() * (max - min + 1)) + min;
 
           stringMessage =
             formatEventMessage(data, teams, postFormat) +
             (data?.type?.toLowerCase() === "goal" ? nav : "");
         }
       } else if (type === "lineup") {
-        let notSetting: any = { lineups: true };
-        if (user.targetType === "channel") {
-          const channel = await TelegramChannel.findById(user.channel);
-          notSetting = channel.notificationSetting;
-        }
+        let notSetting = target.notificationSetting;
 
-        if (notSetting.lineups) {
+        if (
+          notSetting.lineups &&
+          (!user.notificationSetting || user.notificationSetting.lineups)
+        ) {
           stringMessage =
             formatLineup(data) +
             `\n\n <a href="${config.webApp}?startapp=matchY${matchId}Ylineups">🔄 Substitutes</a>`;
         }
-      } else if (type === "FT" || type === "HT") {
+      } else if (breakTime.has(type)) {
         const stats = data.statistics;
         const someStats = stats ? formatStats(stats, teams) + "\n\n" : "\n";
 
         stringMessage = `${type}:\n\n${teams.home.name} ${data.goals.home} - ${data.goals.away} ${teams.away.name}\n${someStats}<a href="${config.webApp}?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${config.webApp}?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
+      } else if (overShortStatus.has(type)) {
+        const stats = data.statistics;
+        const someStats = stats ? formatStats(stats, teams) + "\n\n" : "\n";
+
+        stringMessage = `${type}:\n\n${teams.home.name} ${data.goals.home} - ${
+          data.goals.away
+        } ${teams.away.name}  ${
+          type === "PEN" ? `P(${data.penalty.home} - ${data.penalty.away})` : ""
+        }\n${someStats}<a href="${
+          config.webApp
+        }?startapp=matchY${matchId}Ylineups">⚽️ Player Ratings</a>  | <a href="${
+          config.webApp
+        }?startapp=matchY${matchId}Ystats">📊 More Stats</a>`;
       }
 
       if (stringMessage || action === "delete") {

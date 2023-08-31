@@ -68,7 +68,6 @@ bot.action("addchannel", async (ctx) => {
 
 bot.on("chosen_inline_result", (ctx) => {
   const result = ctx.chosenInlineResult;
-  console.log(result);
   // Do something with the result...
 });
 
@@ -159,14 +158,14 @@ bot.action(/pch:(.+)/, async (ctx) => {
     const notfication = await Notification.findOneAndUpdate(
       {
         channel: chat.id,
-        notId: id,
+        notId: id.trim(),
         type: type.toLowerCase(),
       },
       {
         channel: chat.id,
         targetType: "channel",
-        notId: id,
-        type: type,
+        notId: id.trim(),
+        type: type.trim(),
       },
       { upsert: true }
     );

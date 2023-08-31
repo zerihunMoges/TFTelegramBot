@@ -1,5 +1,4 @@
 import mongoose, { Schema } from "mongoose";
-import { type } from "os";
 
 export interface IChannel {
   title: string;
@@ -22,42 +21,30 @@ export interface NotificationSetting {
   yellowCard?: boolean;
   lineups?: boolean;
   substitution?: boolean;
+  break?: boolean;
+  FT?: boolean;
 }
 
 const NotificationSettingSchema = new Schema<NotificationSetting>({
-  goal: {
-    type: Boolean,
-    default: true,
-  },
-  redCard: {
-    type: Boolean,
-    default: false,
-  },
-  var: {
-    type: Boolean,
-    default: false,
-  },
-  yellowCard: {
-    type: Boolean,
-    default: false,
-  },
-  lineups: {
-    type: Boolean,
-    default: false,
-  },
-  substitution: {
-    type: Boolean,
-    default: false,
-  },
+  goal: Boolean,
+  redCard: Boolean,
+  var: Boolean,
+  yellowCard: Boolean,
+  lineups: Boolean,
+  substitution: Boolean,
+  break: Boolean,
+  FT: Boolean,
 });
 
 export const defaultNotificationSetting = {
   goal: true,
-  redCard: false,
-  var: false,
+  redCard: true,
+  var: true,
   yellowCard: false,
-  lineups: false,
+  lineups: true,
   substitution: false,
+  break: true,
+  FT: true,
 };
 export const defaultPostFormats = {
   goal: "<b>{time}' Goal for {team},</b>\n\n{hometeam} {homegoal} - {awaygoal} {awayteam}\n\n<b>Goal</b> - {player}\n<b>Assist</b> - {assist}",
