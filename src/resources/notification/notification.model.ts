@@ -52,7 +52,7 @@ export const onlyResultNotificationSetting = {
   redCard: false,
   var: false,
   yellowCard: false,
-  lineups: false,
+  lineups: true,
   substitution: false,
   break: false,
   FT: true,
