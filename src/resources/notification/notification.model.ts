@@ -84,11 +84,7 @@ const NotificationSchema = new Schema({
   },
   notificationSetting: {
     type: NotificationSettingSchema,
-    default: function () {
-      if (this.targetType === "channel" || this.type === "club")
-        return defaultNotificationSetting;
-      return onlyResultNotificationSetting;
-    },
+    default: defaultNotificationSetting,
   },
 });
 
