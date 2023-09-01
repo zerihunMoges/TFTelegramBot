@@ -57,7 +57,7 @@ export const onlyResultNotificationSetting = {
   break: false,
   FT: true,
 };
-const NotificationSchema = new mongoose.Schema({
+const NotificationSchema = new Schema({
   user: {
     type: mongoose.Types.ObjectId,
     ref: "User",
@@ -85,9 +85,9 @@ const NotificationSchema = new mongoose.Schema({
   notificationSetting: {
     type: NotificationSettingSchema,
     default: function () {
-      return this!.targetType === "channel" || this.type === "club"
-        ? defaultNotificationSetting
-        : onlyResultNotificationSetting;
+      if (this.targetType === "channel" || this.type === "club")
+        return defaultNotificationSetting;
+      return onlyResultNotificationSetting;
     },
   },
 });
