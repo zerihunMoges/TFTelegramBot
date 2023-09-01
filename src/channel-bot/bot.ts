@@ -167,7 +167,7 @@ bot.action(/pch:(.+)/, async (ctx) => {
         notId: id.trim(),
         type: type.trim(),
       },
-      { upsert: true }
+      { upsert: true, setDefaultsOnInsert: true }
     );
 
     subscription = chat.notificationSetting;

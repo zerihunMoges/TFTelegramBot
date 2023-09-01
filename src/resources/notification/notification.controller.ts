@@ -23,7 +23,7 @@ export async function subscribe(
     const notification = await Notification.findOneAndUpdate(
       { type, notId, user: user._id },
       { type, notId, targetType: "user" },
-      { upsert: true }
+      { upsert: true, setDefaultsOnInsert: true }
     );
 
     res.status(200).json({ response: notification });
