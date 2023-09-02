@@ -355,7 +355,7 @@ function formatStats(stats, teams: Teams) {
     },
     {
       type: "Offsides",
-      value: 3,
+      name: "Corner Kicks",
     },
     {
       type: "Yellow Cards",
@@ -468,9 +468,7 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
         if (postFormat) {
           const nav = `\n\n<a href="${config.webApp}?startapp=matchY${matchId}Ysummary">  🏟️📝 TimeLine</a>`;
 
-          stringMessage =
-            formatEventMessage(data, teams, postFormat) +
-            (data?.type?.toLowerCase() === "goal" ? nav : "");
+          stringMessage = formatEventMessage(data, teams, postFormat);
         }
       } else if (type === "lineup") {
         let notSetting = target.notificationSetting;
