@@ -78,6 +78,7 @@ async function sendTelegramMessage(
 ) {
   const prevMessage = await Message.findOne({
     notification,
+    inlineMessageId,
     messageId,
     messageType: type,
   });

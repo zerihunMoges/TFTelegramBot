@@ -56,6 +56,16 @@ bot.use(stage.middleware());
 connectBotScene.on(message("text"), async (ctx) => {
   const token = ctx.message.text;
 
+  if (token === "Cancel") {
+    await ctx.scene.leave();
+
+    await ctx.reply("Canceled", {
+      reply_markup: {
+        remove_keyboard: true,
+      },
+    });
+  }
+
   try {
     const newBot = new Telegraf(token);
     let newBotData: UserFromGetMe;
@@ -65,7 +75,7 @@ connectBotScene.on(message("text"), async (ctx) => {
         newBotData = userData;
       })
       .catch(async (err) => {
-        if (err.code === 401) {
+        if (err.code === 401 || err.code === 404) {
           return await ctx.reply("Invalid bot token");
         }
         console.error("error occured while getting bot data", err);
@@ -82,6 +92,7 @@ connectBotScene.on(message("text"), async (ctx) => {
         },
       }
     );
+
     await ctx.scene.leave("connect_bot_scene");
   } catch (err) {
     console.error("error occurred in connect bot scene", err);
@@ -305,16 +316,6 @@ bot.command(/connectbot/, async (ctx) => {
       },
     }
   );
-});
-
-bot.hears("Cancel", async (ctx) => {
-  await ctx.scene.leave();
-
-  await ctx.reply("Canceled", {
-    reply_markup: {
-      remove_keyboard: true,
-    },
-  });
 });
 
 async function getNotificationsList(
