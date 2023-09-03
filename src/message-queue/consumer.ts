@@ -22,6 +22,7 @@ import { Message } from "../resources/notification/message.model";
 import { Message as TelegrafMessage } from "telegraf/types";
 import { Event } from "../types/event.type";
 import { config } from "../../config";
+import { match } from "assert";
 
 interface Stat {
   home: number | string | null;
@@ -40,7 +41,8 @@ async function editTelegramMessage(
   chatId: number,
   type: MessageType,
   notification: mongoose.Types.ObjectId,
-  messageId: number,
+  messageId: string,
+  inlineMessageId: number,
   bot: Telegraf
 ) {
   const sentMessage = await bot.telegram.editMessageText(
@@ -53,7 +55,14 @@ async function editTelegramMessage(
     }
   );
 
-  await saveMessage(type, notification, messageId, telegramMessageId, message);
+  await saveMessage(
+    type,
+    notification,
+    messageId,
+    inlineMessageId,
+    telegramMessageId,
+    message
+  );
 
   return sentMessage;
 }
@@ -63,7 +72,8 @@ async function sendTelegramMessage(
   chatId: number,
   type: MessageType,
   notification: mongoose.Types.ObjectId,
-  messageId: number,
+  messageId: string,
+  inlineMessageId: number,
   bot: Telegraf
 ) {
   const prevMessage = await Message.findOne({
@@ -82,6 +92,7 @@ async function sendTelegramMessage(
     type,
     notification,
     messageId,
+    inlineMessageId,
     sentMessage.message_id,
     message
   );
@@ -107,11 +118,12 @@ async function deleteTelegramMessage(
 async function saveMessage(
   messageType: MessageType,
   notification: mongoose.Types.ObjectId,
-  messageId: number,
+  messageId: string,
+  inlineMessageId: number,
   telegramMessageId: number,
   message: string
 ) {
-  const finder: any = { messageType, messageId, notification };
+  const finder: any = { messageType, messageId, inlineMessageId, notification };
 
   return await Message.findOneAndUpdate(
     finder,
@@ -119,6 +131,7 @@ async function saveMessage(
       messageType,
       notification,
       messageId,
+      inlineMessageId,
       telegramMessageId,
       message,
     },
@@ -131,7 +144,8 @@ async function saveMessage(
 async function sendUserMessage(
   message: string,
   type: MessageType,
-  messageId: number,
+  messageId: string,
+  inlineMessageId: number,
   action: Action,
   notification: INotification
 ) {
@@ -146,6 +160,7 @@ async function sendUserMessage(
         type,
         notification._id,
         messageId,
+        inlineMessageId,
         bot
       );
     }
@@ -154,6 +169,7 @@ async function sendUserMessage(
       messageType: type,
       notification: notification._id,
       messageId,
+      inlineMessageId,
     });
     if (action === "put" && savedMessage) {
       return await editTelegramMessage(
@@ -163,6 +179,7 @@ async function sendUserMessage(
         type,
         notification._id,
         messageId,
+        inlineMessageId,
         bot
       );
     }
@@ -182,7 +199,14 @@ async function sendUserMessage(
         setTimeout(resolve, err.response.parameters.retry_after * 1000)
       );
 
-      await sendUserMessage(message, type, messageId, action, notification);
+      await sendUserMessage(
+        message,
+        type,
+        messageId,
+        inlineMessageId,
+        action,
+        notification
+      );
     }
 
     if (err.code === 403) {
@@ -193,8 +217,10 @@ async function sendUserMessage(
 
 async function sendChannelMessage(
   message: string,
+
   type: MessageType,
-  messageId: number,
+  messageId: string,
+  inlineMessageId: number,
   action: Action,
   notification: INotification
 ) {
@@ -211,6 +237,7 @@ async function sendChannelMessage(
         type,
         notification._id,
         messageId,
+        inlineMessageId,
         bot
       );
     }
@@ -219,6 +246,7 @@ async function sendChannelMessage(
       messageType: type,
       notification: notification._id,
       messageId,
+      inlineMessageId,
     });
 
     if (action === "put" && savedMessage) {
@@ -229,6 +257,7 @@ async function sendChannelMessage(
         type,
         notification._id,
         messageId,
+        inlineMessageId,
         bot
       );
     }
@@ -248,7 +277,14 @@ async function sendChannelMessage(
         setTimeout(resolve, err.response.parameters.retry_after * 1000)
       );
 
-      await sendChannelMessage(message, type, messageId, action, notification);
+      await sendChannelMessage(
+        message,
+        type,
+        messageId,
+        inlineMessageId,
+        action,
+        notification
+      );
     }
 
     if (err.code === 403) {
@@ -451,7 +487,7 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
 
       let type: MessageType;
       let data: any;
-      let matchId: string | number;
+      let matchId: string;
       let action: Action;
       let teams: Teams;
       ({ teams, action, matchId, type, data } = message);
@@ -512,15 +548,29 @@ async function handleMessage(msg: ConsumeMessage, channel: Channel) {
 
       if (stringMessage || action === "delete") {
         if (user.targetType === "channel")
-          await sendChannelMessage(stringMessage, type, data.id, action, user);
+          await sendChannelMessage(
+            stringMessage,
+            type,
+            matchId,
+            data.id,
+            action,
+            user
+          );
         else if (user.targetType === "user")
-          await sendUserMessage(stringMessage, type, data.id, action, user);
+          await sendUserMessage(
+            stringMessage,
+            type,
+            matchId,
+            data.id,
+            action,
+            user
+          );
       }
+
+      channel.ack(msg);
     }
   } catch (err) {
     console.error("error handling message", err);
-  } finally {
-    channel.ack(msg);
   }
 }
 

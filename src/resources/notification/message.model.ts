@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 export interface IMessage {
+  inlineMessageId: string;
   messageId: string;
   notification: mongoose.Types.ObjectId;
   messageType: string;
@@ -11,6 +12,10 @@ export interface IMessage {
 const MessageSchema = new mongoose.Schema(
   {
     messageId: {
+      type: String,
+      required: true,
+    },
+    inlineMessageId: {
       type: String,
       required: true,
     },
