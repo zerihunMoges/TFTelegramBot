@@ -66,6 +66,14 @@ async function sendTelegramMessage(
   messageId: number,
   bot: Telegraf
 ) {
+  const prevMessage = await Message.findOne({
+    notification,
+    messageId,
+    messageType: type,
+  });
+  if (prevMessage) {
+    return;
+  }
   const sentMessage = await bot.telegram.sendMessage(chatId, message, {
     parse_mode: "HTML",
   });
@@ -86,6 +94,7 @@ async function deleteTelegramMessage(
   chatId: number,
   bot: Telegraf
 ) {
+  console.log("i have been asked to delete", messageId);
   const sentMessage = await bot.telegram.deleteMessage(
     chatId,
     telegramMessageId
