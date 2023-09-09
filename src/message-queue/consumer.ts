@@ -154,7 +154,7 @@ async function sendUserMessage(
   try {
     const user = await User.findById(notification.user);
     const bot = new Telegraf(user.botToken);
-
+    console.log("got user and bot", user.id, bot.botInfo, action);
     if (action === "post") {
       return await sendTelegramMessage(
         message,
