@@ -59,7 +59,7 @@ connectBotScene.on(message("text"), async (ctx) => {
   if (token === "Cancel") {
     await ctx.scene.leave();
 
-    await ctx.reply("Canceled", {
+    return await ctx.reply("Canceled", {
       reply_markup: {
         remove_keyboard: true,
       },
@@ -76,7 +76,9 @@ connectBotScene.on(message("text"), async (ctx) => {
       })
       .catch(async (err) => {
         if (err.code === 401 || err.code === 404) {
-          return await ctx.reply("Invalid bot token");
+          return await ctx.reply(
+            "Invalid bot token,please make sure you have copied the whole token string which looks something like `123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11` and send token again!"
+          );
         }
         console.error("error occured while getting bot data", err);
       });
