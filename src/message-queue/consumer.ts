@@ -150,6 +150,7 @@ async function sendUserMessage(
   action: Action,
   notification: INotification
 ) {
+  console.log("############# user message recevied, \n", message);
   try {
     const user = await User.findById(notification.user);
     const bot = new Telegraf(user.botToken);
@@ -581,7 +582,7 @@ export async function consumeMessages(queue: "channel" | "user") {
     channel = await channelPool.acquire();
     await channel.consume(queue, async (msg) => handleMessage(msg, channel));
   } catch (err) {
-    console.log("error occurred", err);
+    console.error("error occurred", err);
   } finally {
     if (channel) channelPool.release(channel);
   }
