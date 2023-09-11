@@ -88,7 +88,7 @@ bot.action("mychannels", async (ctx) => {
   const keyboard = channels.map<InlineKeyboardButton[]>((channel) => {
     return [{ text: channel.title, callback_data: `channel:${channel.id}` }];
   });
-  await ctx.reply("Channels:", {
+  await ctx.editMessageText("Channels:", {
     reply_markup: {
       inline_keyboard: keyboard,
     },
@@ -109,6 +109,7 @@ bot.command("addchannel", async (ctx) => {
 });
 
 bot.on("chosen_inline_result", async (ctx) => {
+  console.log("selectedddd");
   const result = ctx.chosenInlineResult;
   let answerKeyboard: InlineKeyboardMarkup = {
     inline_keyboard: [],
@@ -138,6 +139,7 @@ bot.on("chosen_inline_result", async (ctx) => {
 });
 
 bot.action(/chosen_inline_result:(.+)/, async (ctx) => {
+  console.log("selected, here ");
   const [type, id] = ctx.match[1].split(":");
   let answerKeyboard: InlineKeyboardMarkup = {
     inline_keyboard: [],
@@ -377,7 +379,7 @@ bot.action(/channel:(.+)/, async (ctx) => {
   const [channelId] = ctx.match[1].split(":");
   const channel = await Channel.findById(channelId);
   const keyboard: InlineKeyboardButton[][] = [
-    [{ text: "subscriptions", callback_data: `subscriptions:${channelId}` }],
+    [{ text: "Subscriptions", callback_data: `subscriptions:${channelId}` }],
     [{ text: "Notfication Setting", callback_data: `notSetting:${channelId}` }],
     [{ text: "Back", callback_data: "mychannels" }],
   ];
@@ -448,7 +450,10 @@ bot.action(/subNotSetting:(.+)/, async (ctx) => {
   );
 
   keyboard.push([
-    { text: "🗑 Delete", callback_data: `subNotSetting:${channel.id}:remove` },
+    {
+      text: "🗑 Delete",
+      callback_data: `subNotSetting:${notfication.id}:remove`,
+    },
   ]);
   keyboard.push([
     { text: "Back", callback_data: `subscriptions:${channel.id}` },
@@ -519,14 +524,19 @@ async function getSubscriptions(channelId: string, ctx) {
   const keyboard: InlineKeyboardButton[][] = await Promise.all(
     subscriptions.map(async (subscription) => {
       let name: string;
-      if (subscription.type === "club")
-        name = (await getClub(subscription.notId)).team.name;
-      else if (subscription.type === "league")
-        name = (await getLeague(subscription.notId)).league.name;
-
+      let country: string;
+      if (subscription.type === "club") {
+        const target = await getClub(subscription.notId);
+        name = target.team.name;
+        country = target.team.country;
+      } else if (subscription.type === "league") {
+        const target = await getLeague(subscription.notId);
+        name = target.league.name;
+        country = target.country.name;
+      }
       return [
         {
-          text: `${name} (${subscription.type})`,
+          text: `${name} (${country})`,
           callback_data: `subNotSetting:${subscription.id}`,
         },
       ];

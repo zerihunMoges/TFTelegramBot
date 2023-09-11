@@ -428,8 +428,7 @@ export function getNotificationSettingButtons(
     ],
     [
       {
-        text: `${notificationSetting.FT ? "🔔" : "🔕"} 
-        .Full Time`,
+        text: `${notificationSetting.FT ? "🔔" : "🔕"} Full Time`,
         callback_data: callBackGenarator("FT"),
       },
     ],
