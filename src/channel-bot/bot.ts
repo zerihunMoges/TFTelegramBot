@@ -114,6 +114,17 @@ bot.on("chosen_inline_result", async (ctx) => {
     inline_keyboard: [],
   };
   const [type, id] = result.result_id.split(" ");
+  let name: string;
+  let country: string;
+  if (type === "club") {
+    const target = await getClub(id);
+    name = target.team.name;
+    country = target.team.country;
+  } else if (type === "league") {
+    const target = await getLeague(id);
+    name = target.league.name;
+    country = target.country.name;
+  }
   const user = await User.findOne({ chatId: ctx.from.id });
   const userChannels = await Channel.find({ users: { $in: [user.id] } });
 
@@ -131,22 +142,42 @@ bot.on("chosen_inline_result", async (ctx) => {
       "No channel found!, click /addchannel to add a new channel"
     );
   }
+  answerKeyboard.inline_keyboard.push([
+    { text: "Done", callback_data: "chosen_inline_result:done" },
+  ]);
 
-  return await bot.telegram.sendMessage(ctx.from.id, "Select your channel", {
-    reply_markup: answerKeyboard,
-  });
+  return await bot.telegram.sendMessage(
+    ctx.from.id,
+    `To which channel do you want to add ${name} notification ? `,
+    {
+      reply_markup: answerKeyboard,
+    }
+  );
 });
 
 bot.action(/chosen_inline_result:(.+)/, async (ctx) => {
   console.log("selected, here ");
   const [type, id] = ctx.match[1].split(":");
+  if (type === "done") {
+    return await ctx.deleteMessage();
+  }
   let answerKeyboard: InlineKeyboardMarkup = {
     inline_keyboard: [],
   };
 
   const user = await User.findOne({ chatId: ctx.from.id });
   const userChannels = await Channel.find({ users: { $in: [user.id] } });
-
+  let name: string;
+  let country: string;
+  if (type === "club") {
+    const target = await getClub(id);
+    name = target.team.name;
+    country = target.team.country;
+  } else if (type === "league") {
+    const target = await getLeague(id);
+    name = target.league.name;
+    country = target.country.name;
+  }
   userChannels.forEach((channel) => {
     answerKeyboard.inline_keyboard.push([
       {
@@ -156,15 +187,22 @@ bot.action(/chosen_inline_result:(.+)/, async (ctx) => {
     ]);
   });
 
+  answerKeyboard.inline_keyboard.push([
+    { text: "Done", callback_data: "chosen_inline_result:done" },
+  ]);
+
   if (userChannels.length === 0) {
     return await ctx.reply(
       "No channel found!, click /addchannel to add a new channel"
     );
   }
 
-  return await ctx.reply("Select your channel", {
-    reply_markup: answerKeyboard,
-  });
+  return await ctx.editMessageText(
+    `To which channel do you want to add ${name} notification ? `,
+    {
+      reply_markup: answerKeyboard,
+    }
+  );
 });
 
 addChannelScene.on("message", async (ctx) => {
@@ -414,7 +452,7 @@ bot.action(/notSetting:(.+)/, async (ctx) => {
 
   keyboard.push([{ text: "Back", callback_data: `channel:${channel.id}` }]);
 
-  await ctx.editMessageText(`⚙️ $${channel.title} (@${channel.username}):`, {
+  await ctx.editMessageText(`⚙️ ${channel.title} (@${channel.username}):`, {
     reply_markup: {
       inline_keyboard: keyboard,
     },
