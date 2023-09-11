@@ -39,7 +39,7 @@ bot.use(stage.middleware());
 
 const pickSubscriptionMethodKeyboard = Markup.inlineKeyboard([
   [Markup.button.switchToCurrentChat("League", "#Leagues ", false)],
-  [{ text: "Club", callback_data: "countries:0" }],
+  [{ text: "Club", callback_data: "countries" }],
 ]);
 
 bot.telegram.setMyCommands([
@@ -51,7 +51,7 @@ bot.telegram.setMyCommands([
 bot.catch((err, ctx) => {
   console.error(`Error while handling update ${ctx.update.update_id}:`, err);
   ctx.reply(
-    "Oops! Something went wrong. Our team has been notified and we’re working hard to fix the issue. Please try again later or contact our support if the issue persists."
+    "Oops! Something went wrong. Please try again later or contact our support if the issue persists."
   );
 });
 
@@ -133,7 +133,7 @@ bot.on("chosen_inline_result", async (ctx) => {
     );
   }
 
-  return await ctx.reply("Select your channel", {
+  return await bot.telegram.sendMessage(ctx.from.id, "Select your channel", {
     reply_markup: answerKeyboard,
   });
 });
@@ -476,7 +476,7 @@ bot.action(/countries:(.+)/, async (ctx) => {
   const [offset] = ctx.match[1].split(":");
   const keyboard: InlineKeyboardButton[][] = [];
 
-  const page = parseInt(offset);
+  const page = offset ? parseInt(offset) : 0;
   const perRow = 3;
   const perCol = 4;
   const perPage = perRow * perCol;
@@ -511,11 +511,18 @@ bot.action(/countries:(.+)/, async (ctx) => {
       callback_data: `countries:${page + 1}`,
     });
 
-  ctx.editMessageText("Pick a country:", {
-    reply_markup: {
-      inline_keyboard: keyboard,
-    },
-  });
+  if (offset)
+    ctx.editMessageText("Pick a country:", {
+      reply_markup: {
+        inline_keyboard: keyboard,
+      },
+    });
+  else
+    ctx.reply("Pick a country:", {
+      reply_markup: {
+        inline_keyboard: keyboard,
+      },
+    });
 });
 
 async function getSubscriptions(channelId: string, ctx) {
