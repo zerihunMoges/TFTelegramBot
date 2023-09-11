@@ -261,7 +261,12 @@ addChannelScene.on("message", async (ctx) => {
       });
       ctx.scene.leave();
       await ctx.reply(
-        "Channel added successfully, you can now add notifcation subscription to your channel"
+        "Channel added successfully, you can now add notifcation subscription to your channel",
+        {
+          reply_markup: {
+            remove_keyboard: true,
+          },
+        }
       );
       return;
     } else {
