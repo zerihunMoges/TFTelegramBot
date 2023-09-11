@@ -409,7 +409,7 @@ bot.action(/subNotSetting:(.+)/, async (ctx) => {
 
   let notfication = await Notification.findById(notificationId);
   if (eventType === "remove") {
-    await Notification.findByIdAndDelete(notificationId);
+    await Notification.findByIdAndDelete(notfication.id);
     return await getSubscriptions(notfication.channel.toString(), ctx);
   }
 
@@ -435,7 +435,7 @@ bot.action(/subNotSetting:(.+)/, async (ctx) => {
   );
 
   keyboard.push([
-    { text: "🗑 Delete", callback_data: `subscriptions:${channel.id}:remove` },
+    { text: "🗑 Delete", callback_data: `subNotSetting:${channel.id}:remove` },
   ]);
   keyboard.push([
     { text: "Back", callback_data: `subscriptions:${channel.id}` },
@@ -490,7 +490,7 @@ bot.action(/countries:(.+)/, async (ctx) => {
       callback_data: `countries:${page + 1}`,
     });
 
-  ctx.reply("Pick a country:", {
+  ctx.editMessageText("Pick a country:", {
     reply_markup: {
       inline_keyboard: keyboard,
     },

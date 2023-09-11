@@ -78,8 +78,6 @@ export function extractQuery(query: string) {
   let type = "";
   let country = "";
   let actualQuery = "";
-
-  console.log(query, query.toLowerCase(), query.split(" "));
   if (query.toLowerCase().startsWith("#leagues")) {
     const [tag, ...rest] = query.split(" ");
     type = tag;
