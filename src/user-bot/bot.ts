@@ -30,7 +30,7 @@ import mongoose, { Schema } from "mongoose";
 const token = config.botToken;
 const webApp = config.webUrl;
 const startKeyboard = [
-  [{ text: "Today's Matches", web_app: { url: webApp! } }],
+  [{ text: "⚽️ Matches", web_app: { url: webApp! } }],
 
   [
     { text: "📌 Pinned Leagues", callback_data: `leagues` },
@@ -52,6 +52,14 @@ const stage = new Scenes.Stage<Scenes.SceneContext>([connectBotScene]);
 
 bot.use(session());
 bot.use(stage.middleware());
+bot.telegram.setMyCommands([{ command: "menu", description: "menu" }]);
+bot.telegram.setChatMenuButton({
+  menuButton: {
+    type: "web_app",
+    text: "Explore Matches",
+    web_app: { url: webApp },
+  },
+});
 
 connectBotScene.on(message("text"), async (ctx) => {
   const token = ctx.message.text;
@@ -104,14 +112,7 @@ connectBotScene.on(message("text"), async (ctx) => {
 function wider(text: string) {
   return `${text}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0`;
 }
-bot.telegram.setMyCommands([]);
-bot.telegram.setChatMenuButton({
-  menuButton: {
-    type: "web_app",
-    text: "Explore Matches",
-    web_app: { url: webApp },
-  },
-});
+
 bot.catch(async (err, ctx) => {
   console.error(`Error while handling update ${ctx.update.update_id}:`, err);
   const message = await ctx.reply(
@@ -124,6 +125,14 @@ bot.catch(async (err, ctx) => {
 });
 
 bot.start((ctx) => {
+  ctx.reply(wider("📣 Let's get started"), {
+    reply_markup: {
+      inline_keyboard: startKeyboard,
+    },
+  });
+});
+
+bot.command("menu", (ctx) => {
   ctx.reply(wider("📣 Let's get started"), {
     reply_markup: {
       inline_keyboard: startKeyboard,
@@ -153,10 +162,7 @@ bot.action(/leagues/, async (ctx) => {
     }
   );
 
-  keyboards.push([
-    { text: "Today's Matches", web_app: { url: webApp! } },
-    { text: "Back", callback_data: `backToHome` },
-  ]);
+  keyboards.push([{ text: "Back", callback_data: `backToHome` }]);
   ctx.editMessageText(wider("🏆 Pinned Leagues"), {
     reply_markup: {
       inline_keyboard: keyboards,
@@ -188,10 +194,7 @@ bot.action(/clubs/, async (ctx) => {
     ];
   });
 
-  keyboards.push([
-    { text: "Today's Matches", web_app: { url: webApp! } },
-    { text: "Back", callback_data: `backToHome` },
-  ]);
+  keyboards.push([{ text: "Back", callback_data: `backToHome` }]);
   ctx.editMessageText(wider("🏆 Pinned Clubs"), {
     reply_markup: {
       inline_keyboard: keyboards,
