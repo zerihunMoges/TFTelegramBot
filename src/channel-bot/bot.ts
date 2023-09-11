@@ -1,5 +1,9 @@
 import { Telegraf, Markup, Scenes, Context, session } from "telegraf";
-import { InlineKeyboardMarkup, InlineQueryResult } from "telegraf/types";
+import {
+  InlineKeyboardButton,
+  InlineKeyboardMarkup,
+  InlineQueryResult,
+} from "telegraf/types";
 import { addChannel } from "../resources/channel/channel.functions";
 import {
   extractQuery,
@@ -15,34 +19,31 @@ import { config } from "../../config";
 import { Notification } from "../resources/notification/notification.model";
 import { channel } from "diagnostics_channel";
 import { User } from "../resources/user/user.model";
-const LocalSession = require("telegraf-session-local");
-interface SessionData {
-  waitingForChannel?: boolean;
-}
-
-interface MyContext extends Context {
-  session: SessionData;
-}
+import { EventType } from "../types/action.type";
+import {
+  changeNotificationSetting,
+  getNotificationSettingButtons,
+} from "../user-bot/bot";
 
 const token = config.channelBotToken;
 export const bot = new Telegraf<Scenes.SceneContext>(token);
 
-const localSession = new LocalSession({ database: "example_db.json" });
+export const addChannelScene = new Scenes.BaseScene<any>("add_channel_scene");
 
-bot.use(localSession.middleware());
-const stage = new Scenes.Stage<Scenes.SceneContext>();
+const stage = new Scenes.Stage<Scenes.SceneContext>([addChannelScene]);
+
+bot.use(session());
 bot.use(stage.middleware());
-export const addChannelScene = new Scenes.BaseScene<any>("addchannel_scene");
-
-stage.register(addChannelScene);
 
 const pickSubscriptionMethodKeyboard = Markup.inlineKeyboard([
   [Markup.button.switchToCurrentChat("League", "#Leagues ", false)],
-  [Markup.button.switchToCurrentChat("Club", "#Clubs England", false)],
+  [{ text: "Club", callback_data: "countries" }],
 ]);
 
 bot.telegram.setMyCommands([
-  { command: "addchannel", description: "Add a channel" },
+  { command: "menu", description: "menu" },
+  { command: "mychannels", description: "my channels" },
+  { command: "addchannel", description: "new channel" },
 ]);
 
 bot.catch((err, ctx) => {
@@ -59,177 +60,90 @@ bot.start((ctx) => {
   );
 });
 
-bot.action("addchannel", async (ctx) => {
-  await bot.telegram.sendMessage(
-    ctx.from.id,
-    "Click here to add a channel: /addchannel"
+bot.command("menu", async (ctx) => {
+  await ctx.reply(
+    "📣 Choose your preferred subscription option below, you can add multiple different subscription for channel \n\n 1. Follow a specific league ⚽\n\n 2. Follow a club 🏆 \n\n 3. Follow a specific match 🥅 \n\n Select one of the buttons to get started! 🎉",
+    pickSubscriptionMethodKeyboard
   );
 });
 
-bot.on("chosen_inline_result", (ctx) => {
-  const result = ctx.chosenInlineResult;
-  // Do something with the result...
-});
-
-bot.action(/ans:(.+)/, async (ctx) => {
-  let [channelId, eventType, id, type] = ctx.match[1].split(":");
-  try {
-    const channel = await Channel.findById(channelId);
-    const subscription = channel.notificationSetting;
-    if (eventType.toLowerCase() === "goal")
-      subscription.goal = !subscription.goal;
-    if (eventType.toLowerCase() === "yellowcard")
-      subscription.yellowCard = !subscription.yellowCard;
-    if (eventType.toLowerCase() === "redcard")
-      subscription.redCard = !subscription.redCard;
-    if (eventType.toLowerCase() === "lineups")
-      subscription.lineups = !subscription.lineups;
-    if (eventType.toLowerCase() === "substitution")
-      subscription.substitution = !subscription.substitution;
-    if (eventType.toLowerCase() === "var") subscription.var = !subscription.var;
-    if (eventType.toLowerCase() === "activate")
-      channel.active = !channel.active;
-
-    await channel.save();
-    let answerKeyboard: InlineKeyboardMarkup = {
-      inline_keyboard: [
-        [
-          {
-            text: `Goal   ${subscription.goal ? "➖" : "➕"}`,
-            callback_data: `ans:${channel.id}:goal:${id}:${type}`,
-          },
-          {
-            text: `Yellow Card  ${subscription.yellowCard ? "➖" : "➕"}`,
-            callback_data: `ans:${channel.id}:yellowcard:${id}:${type}`,
-          },
-        ],
-        [
-          {
-            text: `Red Card   ${subscription.redCard ? "➖" : "➕"}`,
-            callback_data: `ans:${channel.id}:redcard:${id}:${type}`,
-          },
-          {
-            text: `Substitiution   ${subscription.substitution ? "➖" : "➕"}`,
-            callback_data: `ans:${channel.id}:substitution:${id}:${type}`,
-          },
-        ],
-        [
-          {
-            text: `Var   ${subscription.var ? "➖" : "➕"}`,
-            callback_data: `ans:${channel.id}:var:${id}:${type}`,
-          },
-          {
-            text: `Lineups   ${subscription.lineups ? "➖" : "➕"}`,
-            callback_data: `ans:${channel.id}:lineups:${id}:${type}`,
-          },
-        ],
-        [
-          {
-            text: `${channel.active ? "Unsubscribe" : "subscribe"}`,
-            callback_data: `ans:${channel.id}:activate:${id}:${type}`,
-          },
-        ],
-      ],
-    };
-
-    await ctx.editMessageReplyMarkup(answerKeyboard);
-  } catch (err) {
-    console.error("error while editing subscriptioin", err);
-  }
-});
-
-bot.action(/pch:(.+)/, async (ctx) => {
-  const [chatId, type, id] = ctx.match[1].split(":");
-  try {
-    const chat = await Channel.findOne({ chatId: chatId });
-    let name: string;
-
-    if (type.toLowerCase() === "league") {
-      const league = await getLeague(id);
-      name = league.league.name;
-    }
-    if (type.toLowerCase() === "club") {
-      const club = await getClub(id);
-
-      name = club.team.name;
-    }
-    let subscription: NotificationSetting;
-
-    const notfication = await Notification.findOneAndUpdate(
-      {
-        channel: chat.id,
-        notId: id.trim(),
-        type: type.toLowerCase(),
-      },
-      {
-        channel: chat.id,
-        targetType: "channel",
-        notId: id.trim(),
-        type: type.trim(),
-      },
-      { upsert: true, setDefaultsOnInsert: true }
-    );
-
-    subscription = chat.notificationSetting;
-
-    let answerKeyboard: InlineKeyboardMarkup = {
-      inline_keyboard: [
-        [
-          {
-            text: `Goal   ${subscription.goal ? "➖" : "➕"}`,
-            callback_data: `ans:${chat.id}:goal:${id}:${type}`,
-          },
-          {
-            text: `Yellow Card  ${subscription.yellowCard ? "➖" : "➕"}`,
-            callback_data: `ans:${chat.id}:yellowcard:${id}:${type}`,
-          },
-        ],
-        [
-          {
-            text: `Red Card   ${subscription.redCard ? "➖" : "➕"}`,
-            callback_data: `ans:${chat.id}:redcard:${id}:${type}`,
-          },
-          {
-            text: `Substitiution   ${subscription.substitution ? "➖" : "➕"}`,
-            callback_data: `ans:${chat.id}:substitution:${id}:${type}`,
-          },
-        ],
-        [
-          {
-            text: `Var   ${subscription.var ? "➖" : "➕"}`,
-            callback_data: `ans:${chat.id}:var:${id}:${type}`,
-          },
-          {
-            text: `Lineups   ${subscription.lineups ? "➖" : "➕"}`,
-            callback_data: `ans:${chat.id}:lineups:${id}:${type}`,
-          },
-        ],
-        [
-          {
-            text: `${chat.active ? "Unsubscribe" : "subscribe"}`,
-            callback_data: `ans:${chat.id}:activate:${id}:${type}`,
-          },
-        ],
-      ],
-    };
-
-    await ctx.editMessageText(
-      `📢 ${chat.title} \n\n🔔 Select the live football events of <b>${name}</b> matches you want to receive`,
-      {
-        parse_mode: "HTML",
-        reply_markup: answerKeyboard,
-      }
-    );
-  } catch (err) {
-    console.error("error while editing subscriptioin", err);
-  }
+bot.command("mychannels", async (ctx) => {
+  const user = await User.findOne({ chatId: ctx.from.id });
+  const channels = await Channel.find({ users: { $in: [user.id] } });
+  const answerKeyboard = channels.map<InlineKeyboardButton[]>((channel) => {
+    return [{ text: channel.title, callback_data: `channel:${channel.id}` }];
+  });
 });
 
 bot.command("addchannel", async (ctx) => {
   await ctx.scene.enter("addchannel_scene");
   await ctx.reply(
-    "To add your channel, please follow these steps\n\n 1. Add me as an admin to your channel and grant me post rights.\n\n2. Send me your channel’s username or forward a post from your channel to me for verification.\n\nThis will allow me to verify that I have the necessary permissions to post on your channel. Thank you! 😊"
+    "To add your channel, please follow these steps\n\n 1. Add @tfautoch as an admin to your channel or group and grant it post rights.\n\n2. Send your channel’s || Group username or forward a post from your private channel for verification.\n\nThis will allow us to verify that @tfautoch have the necessary permissions to post on your channel/Group.",
+    {
+      reply_markup: {
+        keyboard: [["Cancel"]],
+        resize_keyboard: true,
+      },
+    }
   );
+});
+
+bot.on("chosen_inline_result", async (ctx) => {
+  const result = ctx.chosenInlineResult;
+  let answerKeyboard: InlineKeyboardMarkup = {
+    inline_keyboard: [],
+  };
+  const [type, id] = result.result_id.split(" ");
+  const user = await User.findOne({ chatId: ctx.from.id });
+  const userChannels = await Channel.find({ users: { $in: [user.id] } });
+
+  userChannels.forEach((channel) => {
+    answerKeyboard.inline_keyboard.push([
+      {
+        text: `${channel.title}`,
+        callback_data: `pch:${channel.chatId}:${type}:${id}`,
+      },
+    ]);
+  });
+
+  if (userChannels.length === 0) {
+    return await ctx.reply(
+      "No channel found!, click /addchannel to add a new channel"
+    );
+  }
+
+  return await ctx.reply("Select your channel", {
+    reply_markup: answerKeyboard,
+  });
+});
+
+bot.action(/chosen_inline_result:(.+)/, async (ctx) => {
+  const [type, id] = ctx.match[1].split(":");
+  let answerKeyboard: InlineKeyboardMarkup = {
+    inline_keyboard: [],
+  };
+
+  const user = await User.findOne({ chatId: ctx.from.id });
+  const userChannels = await Channel.find({ users: { $in: [user.id] } });
+
+  userChannels.forEach((channel) => {
+    answerKeyboard.inline_keyboard.push([
+      {
+        text: `${channel.title}`,
+        callback_data: `pch:${channel.chatId}:${type}:${id}`,
+      },
+    ]);
+  });
+
+  if (userChannels.length === 0) {
+    return await ctx.reply(
+      "No channel found!, click /addchannel to add a new channel"
+    );
+  }
+
+  return await ctx.reply("Select your channel", {
+    reply_markup: answerKeyboard,
+  });
 });
 
 addChannelScene.on("message", async (ctx) => {
@@ -242,6 +156,13 @@ addChannelScene.on("message", async (ctx) => {
     }
   } else if ("text" in msg) {
     channelUsername = msg.text;
+    if (channelUsername === "Cancel") {
+      return await ctx.reply("Canceled", {
+        reply_markup: {
+          remove_keyboard: true,
+        },
+      });
+    }
 
     const usernameRegex = /(?:https?:\/\/)?(?:t\.me\/)?@?(\w+)/;
     const match = channelUsername.match(usernameRegex);
@@ -251,6 +172,7 @@ addChannelScene.on("message", async (ctx) => {
       await ctx.reply("Sorry, I couldn't understand the channel username");
     }
   } else return;
+
   try {
     const chat = await ctx.telegram.getChat(channelUsername);
 
@@ -327,44 +249,233 @@ bot.on("inline_query", async (ctx) => {
       },
     };
     let results: InlineQueryResult[] = [];
-    const user = await User.findOne({ chatId: ctx.from.id });
-    const userChannels = await Channel.find({ users: { $in: [user.id] } });
 
     if (type === "#Leagues") {
-      header.title = `Leagues: keyword-${actualQuery}`;
-      results = await handleLeaguesQuery(
-        limit,
-        offset,
-        actualQuery,
-
-        userChannels
-      );
+      results = await handleLeaguesQuery(limit, offset, actualQuery);
     }
     if (type === "#Clubs") {
-      header.title = `Clubs: country-${
-        country && country.trim().length > 0 ? country : `Country is Required`
-      }`;
-
-      results = await handleClubsQuery(
-        country,
-        limit,
-        offset,
-        actualQuery,
-
-        userChannels
-      );
+      results = await handleClubsQuery(country, limit, offset, actualQuery);
     }
 
-    const emptyChar = "‎";
-
-    return await ctx.answerInlineQuery([header, ...results], {
+    return await ctx.answerInlineQuery([...results], {
       next_offset: (offset + limit).toString(),
-      cache_time: 0,
+      cache_time: 86400,
     });
   } catch (err) {
     console.error("error occured while handling inline query", err);
   }
 });
 
-process.once("SIGINT", () => bot.stop("SIGINT"));
-process.once("SIGTERM", () => bot.stop("SIGTERM"));
+bot.action(/ans:(.+)/, async (ctx) => {
+  let [notficationId, eventType, id, type] = ctx.match[1].split(":");
+  try {
+    const notfication = await Notification.findById(notficationId);
+    const subscription = notfication.notificationSetting;
+    changeNotificationSetting(subscription, eventType as EventType);
+
+    await notfication.save();
+    const keyboard = getNotificationSettingButtons(
+      subscription,
+      (eventType: EventType) => {
+        return `ans:${notfication.id}${eventType}:${id}:${type}`;
+      }
+    );
+
+    keyboard.push([
+      { text: "Back", callback_data: `chosen_inline_result:${type}:${id}` },
+    ]);
+    let answerKeyboard: InlineKeyboardMarkup = {
+      inline_keyboard: keyboard,
+    };
+
+    await ctx.editMessageReplyMarkup(answerKeyboard);
+  } catch (err) {
+    console.error("error while editing subscriptioin", err);
+  }
+});
+
+bot.action(/pch:(.+)/, async (ctx) => {
+  const [chatId, type, id] = ctx.match[1].split(":");
+  try {
+    const chat = await Channel.findOne({ chatId: chatId });
+    let name: string;
+
+    if (type.toLowerCase() === "league") {
+      const league = await getLeague(id);
+      name = league.league.name;
+    }
+    if (type.toLowerCase() === "club") {
+      const club = await getClub(id);
+
+      name = club.team.name;
+    }
+    let subscription: NotificationSetting;
+
+    const notfication = await Notification.findOneAndUpdate(
+      {
+        channel: chat.id,
+        notId: id.trim(),
+        type: type.toLowerCase(),
+      },
+      {
+        channel: chat.id,
+        targetType: "channel",
+        notId: id.trim(),
+        type: type.trim(),
+      },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+
+    subscription = notfication.notificationSetting;
+    const keyboard = getNotificationSettingButtons(
+      subscription,
+      (eventType: EventType) => {
+        return `ans:${notfication.id}:${eventType}:${id}:${type}`;
+      }
+    );
+
+    keyboard.push([
+      { text: "Back", callback_data: `chosen_inline_result:${type}:${id}` },
+    ]);
+    let answerKeyboard: InlineKeyboardMarkup = {
+      inline_keyboard: keyboard,
+    };
+
+    await ctx.editMessageText(
+      `${name} added to 📢 ${chat.title} (@${chat.username}) \n\n🔔 Select the live football events of <b>${name}</b> matches you want to receive`,
+      {
+        parse_mode: "HTML",
+        reply_markup: answerKeyboard,
+      }
+    );
+  } catch (err) {
+    console.error("error while editing subscriptioin", err);
+  }
+});
+
+bot.action(/channel:(.+)/, async (ctx) => {
+  const [channelId] = ctx.match[1].split(":");
+  const channel = await Channel.findById(channelId);
+  const keyboard: InlineKeyboardButton[][] = [
+    [{ text: "subscriptions", callback_data: `subscriptions:${channelId}` }],
+    [{ text: "Notfication Setting", callback_data: `notSetting:${channelId}` }],
+    [{ text: "Back", callback_data: "mychannels" }],
+  ];
+
+  await ctx.editMessageText(`${channel.title}`, {
+    reply_markup: {
+      inline_keyboard: keyboard,
+    },
+  });
+});
+
+bot.action(/subscriptions:(.+)/, async (ctx) => {
+  const [channelId] = ctx.match[1].split(":");
+  await getSubscriptions(channelId, ctx);
+});
+bot.action(/notSetting:(.+)/, async (ctx) => {
+  const [channelId, eventType] = ctx.match[1].split(":");
+  const channel = await Channel.findById(channelId);
+  changeNotificationSetting(
+    channel.notificationSetting,
+    eventType as EventType
+  );
+  await channel.save();
+
+  const keyboard = getNotificationSettingButtons(
+    channel.notificationSetting,
+    (eventType: EventType) => {
+      return `notSetting:${channelId}:${eventType}`;
+    }
+  );
+
+  keyboard.push([{ text: "Back", callback_data: `channel:${channel.id}` }]);
+
+  await ctx.editMessageText(`⚙️ $${channel.title} (@${channel.username}):`, {
+    reply_markup: {
+      inline_keyboard: keyboard,
+    },
+  });
+});
+bot.action(/subNotSetting:(.+)/, async (ctx) => {
+  const [notificationId, eventType] = ctx.match[1].split(":");
+
+  let notfication = await Notification.findById(notificationId);
+  if (eventType === "remove") {
+    await Notification.findByIdAndDelete(notificationId);
+    return await getSubscriptions(notfication.channel.toString(), ctx);
+  }
+
+  const channel = await Channel.findById(notfication.channel);
+
+  changeNotificationSetting(
+    notfication.notificationSetting,
+    eventType as EventType
+  );
+  await notfication.save();
+
+  let name: string;
+  if (notfication.type === "club")
+    name = (await getClub(notfication.notId)).team.name;
+  else if (notfication.type === "league")
+    name = (await getLeague(notfication.notId)).league.name;
+
+  const keyboard = getNotificationSettingButtons(
+    notfication.notificationSetting,
+    (eventType: EventType) => {
+      return `subNotSetting:${notificationId}:${eventType}`;
+    }
+  );
+
+  keyboard.push([
+    { text: "🗑 Delete", callback_data: `subscriptions:${channel.id}:remove` },
+  ]);
+  keyboard.push([
+    { text: "Back", callback_data: `subscriptions:${channel.id}` },
+  ]);
+
+  await ctx.editMessageText(
+    `⚙️ ${name}: ${channel.title} (@${channel.username})`,
+    {
+      reply_markup: {
+        inline_keyboard: keyboard,
+      },
+    }
+  );
+});
+bot.action(/remove:(.+)/, async (ctx) => {
+  const [channelId] = ctx.match[1].split(":");
+});
+
+bot.action("countries", async (ctx) => {});
+
+async function getSubscriptions(channelId: string, ctx) {
+  const subscriptions = await Notification.find({ channel: channelId });
+  const channel = await Channel.findById(channelId);
+  const keyboard: InlineKeyboardButton[][] = await Promise.all(
+    subscriptions.map(async (subscription) => {
+      let name: string;
+      if (subscription.type === "club")
+        name = (await getClub(subscription.notId)).team.name;
+      else if (subscription.type === "league")
+        name = (await getLeague(subscription.notId)).league.name;
+
+      return [
+        {
+          text: `${name} (${subscription.type})`,
+          callback_data: `subNotSetting:${subscription.id}`,
+        },
+      ];
+    })
+  );
+
+  keyboard.push([{ text: "Back", callback_data: `channel:${channelId}` }]);
+  await ctx.editMessageText(
+    `${channel.title} (@${channel.username}) subscriptions`,
+    {
+      reply_markup: {
+        inline_keyboard: keyboard,
+      },
+    }
+  );
+}

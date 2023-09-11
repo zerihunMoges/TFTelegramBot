@@ -34,8 +34,8 @@ export async function getClubs(country: string) {
   const response = await axios.get(apiUrl);
 
   if (response.status !== 200) {
-    console.log(`Failed to fetch clubs. Status: ${response.status}`);
-    return null;
+    console.error(`Failed to fetch clubs. Status: ${response.status}`);
+    return [];
   }
 
   const responseData = response.data;
@@ -48,7 +48,7 @@ export async function getClub(id: string): Promise<Club> {
   const response = await axios.get(apiUrl);
 
   if (response.status !== 200) {
-    console.log(`Failed to fetch clubs. Status: ${response.status}`);
+    console.error(`Failed to fetch clubs. Status: ${response.status}`);
     return null;
   }
 

@@ -330,10 +330,10 @@ function formatLineup(data) {
   } = away;
 
   const homeFormated =
-    `${team?.name} StartXI: ${formation && formation}\n\n` +
+    `${team?.name} StartXI: ${formation ? formation : ""}\n\n` +
     startXI.map((player) => player.player.name).join("; ");
   const awayFormated =
-    `${awayTeam?.name} StartXI: ${awayFormation && awayFormation}\n\n` +
+    `${awayTeam?.name} StartXI: ${awayFormation ? awayFormation : ""}\n\n` +
     awayStartXI.map((player) => player.player.name).join("; ");
 
   const stringMessage = `TeamNews 📋\n\n${homeFormated}\n\n${awayFormated}`;
@@ -401,7 +401,7 @@ function formatStats(stats, teams: Teams) {
     },
     {
       type: "Offsides",
-      name: "Corner Kicks",
+      name: "Offsides",
     },
     {
       type: "Yellow Cards",

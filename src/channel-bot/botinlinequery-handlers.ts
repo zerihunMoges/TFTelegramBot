@@ -2,18 +2,17 @@ import { InlineKeyboardMarkup, InlineQueryResult } from "telegraf/types";
 import { getClubs, getLeagues } from "./botservice";
 import { Markup } from "telegraf";
 import { off } from "process";
+import { Club } from "../types/club.type";
 
 export async function handleClubsQuery(
   country: string,
   limit: number,
   offset: number,
-  actualQuery: string,
-  userChannels
+  actualQuery: string
 ): Promise<InlineQueryResult[]> {
   if (!country || country.trim().length == 0) {
     return [];
   }
-  const emptyChar = "‎";
 
   const responseData = await getClubs(country);
   const response = responseData
@@ -23,33 +22,21 @@ export async function handleClubsQuery(
         data.team.country.toLowerCase().includes(actualQuery.toLowerCase())
     )
     .slice(offset, offset + limit);
-  let answerKeyboard: InlineKeyboardMarkup = {
-    inline_keyboard: [],
-  };
-  return response?.map(({ team, venue }: any): InlineQueryResult => {
-    userChannels.forEach((channel) => {
-      answerKeyboard.inline_keyboard.push([
-        {
-          text: `${channel.title} ${channel.username}`,
-          callback_data: `pch:${channel.chatId}:club:${team.id}`,
-        },
-      ]);
-    });
-    answerKeyboard.inline_keyboard.push([
-      { text: "➕ Add Channel", callback_data: "addchannel" },
-    ]);
+
+  return response?.map(({ team, venue }: Club): InlineQueryResult => {
     return {
       type: "article",
-      id: team.id,
+      id: `club ${team.id.toString()}`,
       title: team.name,
-      description: team.national ? `${team.name} National Team` : team.founded,
+      description: team.national
+        ? `${team.name} National Team`
+        : team.founded.toString(),
       thumb_url: team.logo,
 
       input_message_content: {
-        message_text: `${team.name} <a href="${team.logo}">${emptyChar}</a>`,
+        message_text: `Selected ${team.name}`,
         parse_mode: "HTML",
       },
-      reply_markup: answerKeyboard,
     };
   });
 }
@@ -57,11 +44,8 @@ export async function handleClubsQuery(
 export async function handleLeaguesQuery(
   limit: number,
   offset: number,
-  actualQuery: string,
-
-  userChannels
+  actualQuery: string
 ) {
-  const emptyChar = "‎";
   const responseData = await getLeagues();
   const response = responseData
     .filter(
@@ -73,33 +57,18 @@ export async function handleLeaguesQuery(
 
   return response?.map(
     ({ league, country, seasons }: any): InlineQueryResult => {
-      let answerKeyboard: InlineKeyboardMarkup = {
-        inline_keyboard: [],
-      };
-      userChannels.forEach((channel) => {
-        answerKeyboard.inline_keyboard.push([
-          {
-            text: `${channel.title} ${channel.username}`,
-            callback_data: `pch:${channel.chatId}:league:${league.id}`,
-          },
-        ]);
-      });
-      answerKeyboard.inline_keyboard.push([
-        { text: "➕ Add Channel", callback_data: "addchannel" },
-      ]);
       return {
         type: "article",
-        id: league.id,
+        id: `league ${league.id}`,
         title: league.name,
         description: country.name,
         thumb_url: league.logo,
 
         input_message_content: {
-          message_text: `${league.name} <a href="${league.logo}">${emptyChar}</a>`,
+          message_text: `Selected ${league.name}`,
 
           parse_mode: "HTML",
         },
-        reply_markup: answerKeyboard,
       };
     }
   );

@@ -36,13 +36,14 @@ const startKeyboard = [
     { text: "📌 Pinned Leagues", callback_data: `leagues` },
     { text: "📌 Pinned Clubs", callback_data: `clubs` },
   ],
+  [{ text: "Following Clubs", callback_data: `notifications:club` }],
+  [
+    {
+      text: "⚙️ Notification Settings",
+      callback_data: `profileNotSetting:`,
+    },
+  ],
 ];
-
-// [
-//   { text: "Subscribed Leagues", callback_data: `notifications:league` },
-//   { text: "Subscribed Clubs", callback_data: `notifications:club` },
-// ],
-// [{ text: "⚙️ Notification Settings", callback_data: `profileNotSetting:` }]
 
 export const bot = new Telegraf<Scenes.SceneContext>(token);
 
@@ -108,7 +109,7 @@ bot.telegram.setMyCommands([]);
 bot.telegram.setChatMenuButton({
   menuButton: {
     type: "web_app",
-    text: "Today's Matches",
+    text: "Explore Matches",
     web_app: { url: webApp },
   },
 });
@@ -385,7 +386,7 @@ async function getNotificationsList(
   });
 }
 
-function getNotificationSettingButtons(
+export function getNotificationSettingButtons(
   notificationSetting: NotificationSetting,
   callBackGenarator: (notType: string) => string
 ) {
@@ -436,7 +437,7 @@ function getNotificationSettingButtons(
   ];
 }
 
-function changeNotificationSetting(
+export function changeNotificationSetting(
   notificationSetting: NotificationSetting,
   eventType: EventType
 ) {
