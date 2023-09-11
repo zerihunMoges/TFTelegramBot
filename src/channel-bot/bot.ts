@@ -216,6 +216,7 @@ addChannelScene.on("message", async (ctx) => {
   } else if ("text" in msg) {
     channelUsername = msg.text;
     if (channelUsername === "Cancel") {
+      await ctx.scene.leave();
       return await ctx.reply("Canceled", {
         reply_markup: {
           remove_keyboard: true,
@@ -228,7 +229,9 @@ addChannelScene.on("message", async (ctx) => {
     if (match) {
       channelUsername = "@" + match[1];
     } else {
-      await ctx.reply("Sorry, I couldn't understand the channel username");
+      await ctx.reply(
+        "Sorry, I couldn't understand the channel username, please try again."
+      );
     }
   } else return;
 
@@ -236,7 +239,7 @@ addChannelScene.on("message", async (ctx) => {
     const chat = await ctx.telegram.getChat(channelUsername);
 
     if (chat.type !== "channel") {
-      await ctx.reply("Sorry, this is not a channel");
+      await ctx.reply("Sorry, this is not a channel, try again!");
       return;
     }
     const me = await ctx.telegram.getChatMember(
@@ -256,7 +259,7 @@ addChannelScene.on("message", async (ctx) => {
         username: chat.username,
         userChatId: ctx.chat.id,
       });
-
+      ctx.scene.leave();
       await ctx.reply(
         "Channel added successfully, you can now add notifcation subscription to your channel"
       );
@@ -285,8 +288,6 @@ addChannelScene.on("message", async (ctx) => {
       );
       console.error(error);
     }
-  } finally {
-    return await ctx.scene.leave();
   }
 });
 
