@@ -82,6 +82,19 @@ bot.command("mychannels", async (ctx) => {
   });
 });
 
+bot.action("mychannels", async (ctx) => {
+  const user = await User.findOne({ chatId: ctx.from.id });
+  const channels = await Channel.find({ users: { $in: [user.id] } });
+  const keyboard = channels.map<InlineKeyboardButton[]>((channel) => {
+    return [{ text: channel.title, callback_data: `channel:${channel.id}` }];
+  });
+  await ctx.reply("Channels:", {
+    reply_markup: {
+      inline_keyboard: keyboard,
+    },
+  });
+});
+
 bot.command("addchannel", async (ctx) => {
   await ctx.scene.enter("add_channel_scene");
   await ctx.reply(
