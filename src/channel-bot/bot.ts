@@ -138,7 +138,8 @@ bot.on("chosen_inline_result", async (ctx) => {
   });
 
   if (userChannels.length === 0) {
-    return await ctx.reply(
+    return await bot.telegram.sendMessage(
+      ctx.from.id,
       "No channel found!, click /addchannel to add a new channel"
     );
   }
