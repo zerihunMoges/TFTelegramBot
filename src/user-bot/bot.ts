@@ -36,15 +36,14 @@ const startKeyboard = [
     { text: "📌 Pinned Leagues", callback_data: `leagues` },
     { text: "📌 Pinned Clubs", callback_data: `clubs` },
   ],
-  [{ text: "Following Clubs", callback_data: `notifications:club` }],
-  [
-    {
-      text: "⚙️ Notification Settings",
-      callback_data: `profileNotSetting:`,
-    },
-  ],
 ];
-
+// [{ text: "Following Clubs", callback_data: `notifications:club` }],
+//   [
+//     {
+//       text: "⚙️ Notification Settings",
+//       callback_data: `profileNotSetting:`,
+//     },
+//   ],
 export const bot = new Telegraf<Scenes.SceneContext>(token);
 
 export const connectBotScene = new Scenes.BaseScene<any>("connect_bot_scene");
