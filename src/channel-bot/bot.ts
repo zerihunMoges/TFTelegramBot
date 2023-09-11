@@ -459,14 +459,17 @@ bot.action(/countries:(.+)/, async (ctx) => {
   const keyboard: InlineKeyboardButton[][] = [];
 
   const page = parseInt(offset);
-  const perPage = 16;
+  const perRow = 3;
+  const perCol = 4;
+  const perPage = perRow * perCol;
+
   for (
     let index = page * perPage;
     index < Math.min(page * perPage + perPage, countries.length);
     index++
   ) {
     const country = countries[index];
-    if (index % 4 === 0) keyboard.push([]);
+    if (index % perRow === 0) keyboard.push([]);
 
     keyboard[keyboard.length - 1].push(
       Markup.button.switchToCurrentChat(
