@@ -39,7 +39,7 @@ bot.use(stage.middleware());
 
 const pickSubscriptionMethodKeyboard = Markup.inlineKeyboard([
   [Markup.button.switchToCurrentChat("League", "#Leagues ", false)],
-  [{ text: "Club", callback_data: "countries:" }],
+  [{ text: "Club", callback_data: "countries:new" }],
 ]);
 
 bot.telegram.setMyCommands([
@@ -345,10 +345,11 @@ bot.action(/pch:(.+)/, async (ctx) => {
         notId: id.trim(),
         type: type.trim(),
       },
-      { upsert: true }
+      { upsert: true, new: true }
     );
 
     subscription = notfication.notificationSetting;
+    console.log("setting", subscription);
     const keyboard = getNotificationSettingButtons(
       subscription,
       (eventType: EventType) => {
@@ -476,7 +477,7 @@ bot.action(/countries:(.+)/, async (ctx) => {
   const [offset] = ctx.match[1].split(":");
   const keyboard: InlineKeyboardButton[][] = [];
 
-  const page = offset ? parseInt(offset) : 0;
+  const page = offset !== "new" ? parseInt(offset) : 0;
   const perRow = 3;
   const perCol = 4;
   const perPage = perRow * perCol;
@@ -511,7 +512,7 @@ bot.action(/countries:(.+)/, async (ctx) => {
       callback_data: `countries:${page + 1}`,
     });
 
-  if (offset)
+  if (offset !== "new")
     ctx.editMessageText("Pick a country:", {
       reply_markup: {
         inline_keyboard: keyboard,
