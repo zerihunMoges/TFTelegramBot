@@ -109,7 +109,6 @@ bot.command("addchannel", async (ctx) => {
 });
 
 bot.on("chosen_inline_result", async (ctx) => {
-  console.log("selectedddd");
   const result = ctx.chosenInlineResult;
   let answerKeyboard: InlineKeyboardMarkup = {
     inline_keyboard: [],
@@ -122,7 +121,7 @@ bot.on("chosen_inline_result", async (ctx) => {
     answerKeyboard.inline_keyboard.push([
       {
         text: `${channel.title}`,
-        callback_data: `pch:${channel.chatId}:${type}:${id}`,
+        callback_data: `pch:${channel.id}:${type}:${id}`,
       },
     ]);
   });
@@ -152,7 +151,7 @@ bot.action(/chosen_inline_result:(.+)/, async (ctx) => {
     answerKeyboard.inline_keyboard.push([
       {
         text: `${channel.title}`,
-        callback_data: `pch:${channel.chatId}:${type}:${id}`,
+        callback_data: `pch:${channel.id}:${type}:${id}`,
       },
     ]);
   });
@@ -317,9 +316,9 @@ bot.action(/ans:(.+)/, async (ctx) => {
 });
 
 bot.action(/pch:(.+)/, async (ctx) => {
-  const [chatId, type, id] = ctx.match[1].split(":");
+  const [channelId, type, id] = ctx.match[1].split(":");
   try {
-    const chat = await Channel.findOne({ chatId: chatId });
+    const chat = await Channel.findById(channelId);
     let name: string;
 
     if (type.toLowerCase() === "league") {
@@ -336,6 +335,7 @@ bot.action(/pch:(.+)/, async (ctx) => {
     const notfication = await Notification.findOneAndUpdate(
       {
         channel: chat.id,
+        targetType: "channel",
         notId: id.trim(),
         type: type.toLowerCase(),
       },
@@ -345,7 +345,7 @@ bot.action(/pch:(.+)/, async (ctx) => {
         notId: id.trim(),
         type: type.trim(),
       },
-      { upsert: true, setDefaultsOnInsert: true }
+      { upsert: true }
     );
 
     subscription = notfication.notificationSetting;
