@@ -39,7 +39,7 @@ bot.use(stage.middleware());
 
 const pickSubscriptionMethodKeyboard = Markup.inlineKeyboard([
   [Markup.button.switchToCurrentChat("League", "#Leagues ", false)],
-  [{ text: "Club", callback_data: "countries" }],
+  [{ text: "Club", callback_data: "countries:" }],
 ]);
 
 bot.telegram.setMyCommands([
