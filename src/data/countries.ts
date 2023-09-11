@@ -1,4 +1,4 @@
-const countries = [
+export const countries = [
   {
     code: "GB",
     flag: "https://media-2.api-sports.io/flags/gb.svg",

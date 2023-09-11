@@ -24,6 +24,8 @@ import {
   changeNotificationSetting,
   getNotificationSettingButtons,
 } from "../user-bot/bot";
+import { countries } from "../data/countries";
+import { off } from "process";
 
 const token = config.channelBotToken;
 export const bot = new Telegraf<Scenes.SceneContext>(token);
@@ -37,7 +39,7 @@ bot.use(stage.middleware());
 
 const pickSubscriptionMethodKeyboard = Markup.inlineKeyboard([
   [Markup.button.switchToCurrentChat("League", "#Leagues ", false)],
-  [{ text: "Club", callback_data: "countries" }],
+  [{ text: "Club", callback_data: "countries:0" }],
 ]);
 
 bot.telegram.setMyCommands([
@@ -70,13 +72,18 @@ bot.command("menu", async (ctx) => {
 bot.command("mychannels", async (ctx) => {
   const user = await User.findOne({ chatId: ctx.from.id });
   const channels = await Channel.find({ users: { $in: [user.id] } });
-  const answerKeyboard = channels.map<InlineKeyboardButton[]>((channel) => {
+  const keyboard = channels.map<InlineKeyboardButton[]>((channel) => {
     return [{ text: channel.title, callback_data: `channel:${channel.id}` }];
+  });
+  await ctx.reply("Channels:", {
+    reply_markup: {
+      inline_keyboard: keyboard,
+    },
   });
 });
 
 bot.command("addchannel", async (ctx) => {
-  await ctx.scene.enter("addchannel_scene");
+  await ctx.scene.enter("add_channel_scene");
   await ctx.reply(
     "To add your channel, please follow these steps\n\n 1. Add @tfautoch as an admin to your channel or group and grant it post rights.\n\n2. Send your channel’s || Group username or forward a post from your private channel for verification.\n\nThis will allow us to verify that @tfautoch have the necessary permissions to post on your channel/Group.",
     {
@@ -447,7 +454,48 @@ bot.action(/remove:(.+)/, async (ctx) => {
   const [channelId] = ctx.match[1].split(":");
 });
 
-bot.action("countries", async (ctx) => {});
+bot.action(/countries:(.+)/, async (ctx) => {
+  const [offset] = ctx.match[1].split(":");
+  const keyboard: InlineKeyboardButton[][] = [];
+
+  const page = parseInt(offset);
+  const perPage = 16;
+  for (
+    let index = page * perPage;
+    index < Math.min(page * perPage + perPage, countries.length);
+    index++
+  ) {
+    const country = countries[index];
+    if (index % 4 === 0) keyboard.push([]);
+
+    keyboard[keyboard.length - 1].push(
+      Markup.button.switchToCurrentChat(
+        country.name,
+        `#Clubs ${country.name}`,
+        false
+      )
+    );
+  }
+
+  keyboard.push([]);
+
+  if (page > 0)
+    keyboard[keyboard.length - 1].push({
+      text: "⬅️",
+      callback_data: `countries:${page - 1}`,
+    });
+  if (page * perPage < countries.length - 1)
+    keyboard[keyboard.length - 1].push({
+      text: "➡️",
+      callback_data: `countries:${page + 1}`,
+    });
+
+  ctx.reply("Pick a country:", {
+    reply_markup: {
+      inline_keyboard: keyboard,
+    },
+  });
+});
 
 async function getSubscriptions(channelId: string, ctx) {
   const subscriptions = await Notification.find({ channel: channelId });
